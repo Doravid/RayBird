@@ -29,11 +29,11 @@ pub fn runGame() void {
     rl.setTargetFPS(240); // Set our game to run at 60 frames-per-second
 
     var box = rl.loadImage("resources\\box.png");
-    var plat = rl.loadImage("resources\\plat.png");
+    var plat = rl.loadImage("resources\\dirt.png");
     var fruit = rl.loadImage("resources\\fruit.png");
 
     rl.imageResize(&box, boxSize, boxSize);
-    rl.imageResize(&plat, boxSize, boxSize);
+    rl.imageResizeNN(&plat, boxSize, boxSize);
     rl.imageResize(&fruit, boxSize, boxSize);
 
     const box_t = rl.loadTextureFromImage(box);

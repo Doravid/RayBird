@@ -1,7 +1,8 @@
 const game = @import("game.zig");
 const rl = @import("raylib");
 const std = @import("std");
-const level1 = @import("maps\\level1.zig");
+const levelManager = @import("maps\\levelManager.zig");
+
 pub const pos = struct {
     x: i32,
     y: i32,
@@ -17,7 +18,7 @@ const direction = enum { up, down, left, right };
 var movementLocked = false;
 var canFall = false;
 //Current Map State.
-pub var mat16x9 = level1.level;
+pub var mat16x9 = levelManager.getLevel();
 //Player history!
 pub var undoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_allocator);
 pub var redoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_allocator);
@@ -127,6 +128,9 @@ fn fall() void {
 }
 
 pub fn drawPlayer(texture: rl.Texture) void {
+    for (body.items) |elem| {
+        rl.drawTexture(texture, elem.x, elem.y, rl.Color.white);
+    }
     for (mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             if (element == blockType.bdy) {
@@ -141,7 +145,7 @@ pub fn initPlayer() void {
     body.clearAndFree();
     movementLocked = false;
     canFall = false;
-    mat16x9 = level1.level;
+    mat16x9 = levelManager.level1;
 
     body.append(pos{ .x = 0, .y = 0 }) catch |err| {
         std.debug.print("Failed to append position: {}\n", .{err});
