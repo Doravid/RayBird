@@ -2,6 +2,7 @@
 const rl = @import("raylib");
 const std = @import("std");
 const player = @import("player.zig");
+const levelManager = @import("maps\\levelManager.zig");
 
 const windowedWidth = 1920;
 const windowedHeight = 1080;
@@ -51,22 +52,17 @@ pub fn runGame() void {
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // Update
-        //----------------------------------------------------------------------------------
-        // TODO: Update your variables here
-        //----------------------------------------------------------------------------------
         player.updateGravity();
         player.updatePos();
         fullScreen();
         // Draw
-        //----------------------------------------------------------------------------------
         rl.beginDrawing();
-
         defer rl.endDrawing();
+
         rl.clearBackground(rl.Color.white);
         rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.ray_white, Color.sky_blue);
         drawMap(plat_t);
         drawFruit(fruit_t);
-        //Draws player
         player.drawPlayer(box_t);
 
         rl.drawFPS(0, 0);
@@ -129,4 +125,10 @@ pub fn setBlockAt(x: i32, y: i32, block: blockType) void {
         return;
     }
     player.mat16x9[@intCast(new_y)][@intCast(new_x)] = block;
+}
+
+fn checkLevelChange() void {
+    const x: i16 = @intFromEnum(rl.getKeyPressed());
+    if (x < 49 or x > 57) return;
+    levelManager.setLevel(x);
 }

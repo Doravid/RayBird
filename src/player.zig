@@ -18,7 +18,17 @@ const direction = enum { up, down, left, right };
 var movementLocked = false;
 var canFall = false;
 //Current Map State.
-pub var mat16x9 = levelManager.getLevel();
+pub var mat16x9 = [9][16]blockType{
+    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+};
 //Player history!
 pub var undoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_allocator);
 pub var redoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_allocator);
@@ -57,7 +67,6 @@ pub fn updatePos() void {
 fn movePlayer(dir: direction) void {
     var i: usize = body.items.len;
     const tail = body.items[body.items.len - 1];
-
     while (i > 1) {
         i -= 1;
         body.items[i] = body.items[i - 1];
@@ -145,7 +154,7 @@ pub fn initPlayer() void {
     body.clearAndFree();
     movementLocked = false;
     canFall = false;
-    mat16x9 = levelManager.level1;
+    mat16x9 = levelManager.getLevel();
 
     body.append(pos{ .x = 0, .y = 0 }) catch |err| {
         std.debug.print("Failed to append position: {}\n", .{err});

@@ -13,3 +13,8 @@ pub fn setLevel(levelNumber: i32) void {
 pub fn getLevel() [9][16]game.blockType {
     return currentLevel;
 }
+
+pub fn loadLevel(x: i16) !void {
+    if (x > levels.len) return;
+    currentLevel = levels[x - 1];
+}
