@@ -172,3 +172,4 @@ pub fn initPlayer() void {
     game.setBlockAt(120, 0, bdy);
     game.setBlockAt(240, 0, bdy);
 }
+//pub fn loadBody([]body)
