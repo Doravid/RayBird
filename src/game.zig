@@ -63,6 +63,7 @@ pub fn runGame() void {
         rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.ray_white, Color.sky_blue);
         drawMap(plat_t);
         drawFruit(fruit_t);
+        checkLevelChange();
         player.drawPlayer(box_t);
 
         rl.drawFPS(0, 0);
@@ -128,7 +129,7 @@ pub fn setBlockAt(x: i32, y: i32, block: blockType) void {
 }
 
 fn checkLevelChange() void {
-    const x: i16 = @intFromEnum(rl.getKeyPressed());
+    const x: i16 = @intCast(@intFromEnum(rl.getKeyPressed()));
     if (x < 49 or x > 57) return;
-    levelManager.setLevel(x);
+    levelManager.setLevel(@intCast(x - 49));
 }
