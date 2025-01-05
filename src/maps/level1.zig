@@ -22,4 +22,4 @@ pub const level = [9][16]blockType{
 };
 
 //Snake body: [0] is head and [len-1] is tail
-pub const snake = []pos{ pos{ .x = 0, .y = 0 }, pos{ .x = 120, .y = 0 }, pos{ .x = 240, .y = 0 } };
+pub const snake = [_]pos{ pos{ .x = 0, .y = 0 }, pos{ .x = 120, .y = 0 }, pos{ .x = 240, .y = 0 } };

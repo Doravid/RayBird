@@ -155,21 +155,19 @@ pub fn initPlayer() void {
     movementLocked = false;
     canFall = false;
     mat16x9 = levelManager.getLevel();
+    const tempBody = levelManager.getBody();
 
-    body.append(pos{ .x = 0, .y = 0 }) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
-        return;
-    };
-    body.append(pos{ .x = 120, .y = 0 }) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
-        return;
-    };
-    body.append(pos{ .x = 240, .y = 0 }) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
-        return;
-    };
-    game.setBlockAt(body.items[0].x, body.items[0].y, bdy);
-    game.setBlockAt(120, 0, bdy);
-    game.setBlockAt(240, 0, bdy);
+    for (tempBody) |elem| {
+        body.append(elem) catch |err| {
+            std.debug.print("Failed to append position: {}\n", .{err});
+            return;
+        };
+    }
+
+    var i = body.items.len;
+    while (i > 0) {
+        i -= 1;
+        game.setBlockAt(body.items[i].x, body.items[i].y, bdy);
+    }
 }
 //pub fn loadBody([]body)
