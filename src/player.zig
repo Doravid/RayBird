@@ -2,7 +2,6 @@ const game = @import("game.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const levelManager = @import("maps\\levelManager.zig");
-
 pub const pos = struct {
     x: i32,
     y: i32,
@@ -154,7 +153,7 @@ pub fn initPlayer() void {
     body.clearAndFree();
     movementLocked = false;
     canFall = false;
-    mat16x9 = levelManager.getLevel();
+    mat16x9 = levelManager.getLevelMap();
     const tempBody = levelManager.getBody();
 
     for (tempBody) |elem| {

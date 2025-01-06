@@ -2,29 +2,32 @@ const game = @import("..\\game.zig");
 const std = @import("std");
 const player = @import("..\\player.zig");
 
-const levels = [_]type{
-    @import("level1.zig"),
-    @import("level2.zig"),
+//I really dislike how this is done but I dislike how arrays in zig are handled even more... so this is what I get.
+const maps = [_][9][16]game.blockType{
+    @import("level1.zig").map,
+    @import("level2.zig").map,
+};
+const bodies = [_][]player.pos{
+    @constCast(&@import("level1.zig").snake),
+    @constCast(&@import("level2.zig").snake),
 };
 
-// const levels = [_][9][16]game.blockType{
-//     @import("level1.zig").level,
-//     @import("level2.zig").level,
-// };
-
-var currentBody = levels[0].snake;
+var currentLevel = maps[0];
 
 var currentLevelNumber: usize = 0;
 pub fn setLevel(levelNumber: usize) void {
-    const size: i32 = @intCast(levels.len);
-    if (levelNumber < 0 or levelNumber > size) return;
-    currentBody = levels[0].snake;
+    const size: i32 = @intCast(maps.len);
+
+    if (levelNumber < 0 or levelNumber >= size) return;
+    currentLevel = maps[levelNumber];
+
     currentLevelNumber = levelNumber;
     player.initPlayer();
 }
-pub fn getLevel() [9][16]game.blockType {
-    return levels[currentLevelNumber].level;
+
+pub fn getLevelMap() [9][16]game.blockType {
+    return maps[currentLevelNumber];
 }
 pub fn getBody() []player.pos {
-    return currentBody;
+    return bodies[currentLevelNumber];
 }
