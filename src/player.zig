@@ -38,26 +38,26 @@ var body = std.ArrayList(pos).init(std.heap.page_allocator);
 
 //Moves the player and adds their previous position to player history. (If the move is valid ofc)
 pub fn updatePos() void {
-    if (rl.isKeyPressed(rl.KeyboardKey.key_r)) {
+    if (rl.isKeyPressed(rl.KeyboardKey.r)) {
         initPlayer();
     }
     if (movementLocked) return;
-    if (rl.isKeyPressed(rl.KeyboardKey.key_w) and (body.items[0].y) - game.boxSize >= 0) {
+    if (rl.isKeyPressed(rl.KeyboardKey.w) and (body.items[0].y) - game.boxSize >= 0) {
         if (game.posMoveable(body.items[0].x, body.items[0].y - game.boxSize)) {
             movePlayer(direction.up);
         }
     }
-    if (rl.isKeyPressed(rl.KeyboardKey.key_a) and body.items[0].x - game.boxSize >= 0) {
+    if (rl.isKeyPressed(rl.KeyboardKey.a) and body.items[0].x - game.boxSize >= 0) {
         if (game.posMoveable(body.items[0].x - game.boxSize, body.items[0].y)) {
             movePlayer(direction.left);
         }
     }
-    if (rl.isKeyPressed(rl.KeyboardKey.key_s) and body.items[0].y + game.boxSize <= game.screenHeight - game.boxSize) {
+    if (rl.isKeyPressed(rl.KeyboardKey.s) and body.items[0].y + game.boxSize <= game.screenHeight - game.boxSize) {
         if (game.posMoveable(body.items[0].x, body.items[0].y + game.boxSize)) {
             movePlayer(direction.down);
         }
     }
-    if (rl.isKeyPressed(rl.KeyboardKey.key_d) and body.items[0].x + game.boxSize <= game.screenWidth - game.boxSize) {
+    if (rl.isKeyPressed(rl.KeyboardKey.d) and body.items[0].x + game.boxSize <= game.screenWidth - game.boxSize) {
         if (game.posMoveable(body.items[0].x + game.boxSize, body.items[0].y)) {
             movePlayer(direction.right);
         }

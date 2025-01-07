@@ -1,5 +1,6 @@
 // raylib-zig (c) Nikolas Wipper 2023 :D
 const rl = @import("raylib");
+const gui = @import("raygui");
 const std = @import("std");
 const player = @import("player.zig");
 const levelManager = @import("maps\\levelManager.zig");
@@ -17,6 +18,7 @@ const Color = rl.Color;
 
 pub var screenWidth: i32 = windowedWidth;
 pub var screenHeight: i32 = windowedHeight;
+
 pub var boxSize: i32 = 120;
 const pos = player.pos;
 
@@ -25,7 +27,6 @@ pub fn runGame() void {
     //--------------------------------------------------------------------------------------
     defer player.undoHistory.deinit();
     defer player.redoHistory.deinit();
-
     rl.initWindow(screenWidth, screenHeight, "Boxes");
     rl.setTargetFPS(240); // Set our game to run at 60 frames-per-second
 
@@ -46,7 +47,7 @@ pub fn runGame() void {
     defer rl.unloadImage(fruit);
 
     defer rl.closeWindow(); // Close window and OpenGL context
-
+    var inMenus: bool = true;
     //--------------------------------------------------------------------------------------
 
     // Main game loop
@@ -58,14 +59,18 @@ pub fn runGame() void {
         // Draw
         rl.beginDrawing();
         defer rl.endDrawing();
-
+        //Clear and draw background.
         rl.clearBackground(rl.Color.white);
         rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.ray_white, Color.sky_blue);
-        drawMap(plat_t);
-        drawFruit(fruit_t);
-        checkLevelChange();
-        player.drawPlayer(box_t);
 
+        if (inMenus) {
+            if (gui.guiButton(rl.Rectangle{ .height = @as(f32, @floatFromInt(boxSize)), .width = 4.0 * @as(f32, @floatFromInt(boxSize)), .x = (@as(f32, @floatFromInt(screenWidth)) / 2.0) - 240.0, .y = -240.0 + @as(f32, @floatFromInt(screenHeight)) / 2 }, "Start Game!") == 1) inMenus = false;
+        } else {
+            drawMap(plat_t);
+            drawFruit(fruit_t);
+            checkLevelChange();
+            player.drawPlayer(box_t);
+        }
         rl.drawFPS(0, 0);
         //----------------------------------------------------------------------------------
     }
@@ -95,7 +100,7 @@ fn drawFruit(texture: rl.Texture) void {
 }
 
 fn fullScreen() void {
-    if (rl.isKeyPressed(rl.KeyboardKey.key_f11)) {
+    if (rl.isKeyPressed(rl.KeyboardKey.f11)) {
         rl.toggleFullscreen();
         return;
     }

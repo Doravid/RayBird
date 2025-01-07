@@ -3,6 +3,7 @@ const std = @import("std");
 const player = @import("..\\player.zig");
 
 //I really dislike how this is done but I dislike how arrays in zig are handled even more... so this is what I get.
+//START OF PER LEVEl IMPORTS, MUST DO BOTH.
 const maps = [_][9][16]game.blockType{
     @import("level1.zig").map,
     @import("level2.zig").map,
@@ -11,6 +12,7 @@ const bodies = [_][]player.pos{
     @constCast(&@import("level1.zig").snake),
     @constCast(&@import("level2.zig").snake),
 };
+//END OF PER LEVEL IMPORTS
 
 var currentLevel = maps[0];
 
