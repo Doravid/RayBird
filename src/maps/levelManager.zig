@@ -1,3 +1,6 @@
+const rl = @import("raylib");
+const gui = @import("raygui");
+
 const game = @import("..\\game.zig");
 const std = @import("std");
 const player = @import("..\\player.zig");
@@ -7,12 +10,28 @@ const player = @import("..\\player.zig");
 const maps = [_][9][16]game.blockType{
     @import("level1.zig").map,
     @import("level2.zig").map,
+    //Testing
+    @import("level2.zig").map,
+    @import("level2.zig").map,
+    @import("level2.zig").map,
+    @import("level2.zig").map,
+    @import("level2.zig").map,
+    @import("level2.zig").map,
 };
 const bodies = [_][]player.pos{
     @constCast(&@import("level1.zig").snake),
     @constCast(&@import("level2.zig").snake),
+    //Testing
+    @constCast(&@import("level2.zig").snake),
+    @constCast(&@import("level2.zig").snake),
+    @constCast(&@import("level2.zig").snake),
+    @constCast(&@import("level2.zig").snake),
+    @constCast(&@import("level2.zig").snake),
+    @constCast(&@import("level2.zig").snake),
 };
 //END OF PER LEVEL IMPORTS
+
+pub const numLevels: i32 = maps.len;
 
 var currentLevel = maps[0];
 
@@ -32,4 +51,46 @@ pub fn getLevelMap() [9][16]game.blockType {
 }
 pub fn getBody() []player.pos {
     return bodies[currentLevelNumber];
+}
+
+const menuType = enum { main, levelSelect, pauseMenu };
+var currentMenu: menuType = menuType.main;
+const levelSelectRowSize: i32 = 6;
+pub fn loadMenu() bool {
+    if (currentMenu == menuType.main) {
+        const startGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = -300 + @as(f32, @floatFromInt(game.screenHeight)) / 2 }, "Start Game!");
+        const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = -60.0 + @as(f32, @floatFromInt(game.screenHeight)) / 2 }, "Level Select");
+        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 180.0 + @as(f32, @floatFromInt(game.screenHeight)) / 2 }, "Quit");
+
+        if (startGame_button == 1) {
+            return false;
+        }
+        if (levelSelect_button == 1) {
+            currentMenu = menuType.levelSelect;
+        }
+        if (quitGame_button == 1) {
+            rl.closeWindow();
+        }
+    }
+    if (currentMenu == menuType.levelSelect) {
+        var i: i32 = 0;
+        while (i < maps.len) {
+            const max_len = 20;
+            var buf: [max_len]u8 = undefined;
+            const numAsString = std.fmt.bufPrintZ(&buf, "{}", .{i + 1}) catch |err| {
+                std.debug.print("{}", .{err});
+                return true;
+            };
+            const level = numAsString.ptr;
+            const levelButton = gui.guiButton(rl.Rectangle{ .height = 2.0 * @as(f32, @floatFromInt(game.boxSize)), .width = 2.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth * (@mod(i, levelSelectRowSize)))) / 6.0) + 60, .y = @as(f32, @floatFromInt(@divTrunc(game.boxSize, 6) + game.boxSize * @divTrunc(i, 6))) * 2.5 }, level);
+            if (levelButton == 1) {
+                setLevel(@intCast(i));
+                return false;
+            }
+
+            i += 1;
+        }
+    }
+
+    return true;
 }

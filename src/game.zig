@@ -29,6 +29,7 @@ pub fn runGame() void {
     defer player.redoHistory.deinit();
     rl.initWindow(screenWidth, screenHeight, "Boxes");
     rl.setTargetFPS(240); // Set our game to run at 60 frames-per-second
+    rl.setExitKey(rl.KeyboardKey.delete);
 
     var box = rl.loadImage("resources\\box.png");
     var plat = rl.loadImage("resources\\dirt.png");
@@ -64,7 +65,7 @@ pub fn runGame() void {
         rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.ray_white, Color.sky_blue);
 
         if (inMenus) {
-            if (gui.guiButton(rl.Rectangle{ .height = @as(f32, @floatFromInt(boxSize)), .width = 4.0 * @as(f32, @floatFromInt(boxSize)), .x = (@as(f32, @floatFromInt(screenWidth)) / 2.0) - 240.0, .y = -240.0 + @as(f32, @floatFromInt(screenHeight)) / 2 }, "Start Game!") == 1) inMenus = false;
+            inMenus = levelManager.loadMenu();
         } else {
             drawMap(plat_t);
             drawFruit(fruit_t);
