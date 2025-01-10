@@ -8,13 +8,16 @@ const levelManager = @import("maps\\levelManager.zig");
 const windowedWidth = 1920;
 const windowedHeight = 1080;
 
-pub const blockType = enum { sol, air, spk, bdy, null, frt };
+pub const blockType = enum { sol, air, spk, bdy, null, frt, vic };
 const sol = blockType.sol;
 const air = blockType.air;
 const spk = blockType.spk;
 const bdy = blockType.bdy;
-const KeyboardKey = rl.KeyboardKey;
+const frt = blockType.frt;
+const vic = blockType.vic;
+
 const Color = rl.Color;
+const KeyboardKey = rl.KeyboardKey;
 
 pub var screenWidth: i32 = windowedWidth;
 pub var screenHeight: i32 = windowedHeight;
@@ -34,15 +37,20 @@ pub fn runGame() void {
     var box = rl.loadImage("resources\\box.png");
     var plat = rl.loadImage("resources\\dirt.png");
     var fruit = rl.loadImage("resources\\fruit.png");
+    var victory = rl.loadImage("resources\\victory.png");
 
     rl.imageResize(&box, boxSize, boxSize);
     rl.imageResizeNN(&plat, boxSize, boxSize);
     rl.imageResize(&fruit, boxSize, boxSize);
+    rl.imageResize(&victory, boxSize, boxSize);
 
     const box_t = rl.loadTextureFromImage(box);
     const plat_t = rl.loadTextureFromImage(plat);
     const fruit_t = rl.loadTextureFromImage(fruit);
+    const victory_t = rl.loadTextureFromImage(victory);
+
     player.initPlayer();
+
     defer rl.unloadImage(box);
     defer rl.unloadImage(plat);
     defer rl.unloadImage(fruit);
@@ -67,9 +75,11 @@ pub fn runGame() void {
         if (inMenus) {
             inMenus = levelManager.loadMenu();
         } else {
-            drawMap(plat_t);
+            inMenus = levelManager.checkPause();
+            drawMap(plat_t, victory_t);
             drawFruit(fruit_t);
             checkLevelChange();
+            //player.initPlayer();
             player.drawPlayer(box_t);
         }
         rl.drawFPS(0, 0);
@@ -77,13 +87,18 @@ pub fn runGame() void {
     }
 }
 //Draws all of the boxes in the map each frame.
-fn drawMap(plat_t: rl.Texture) void {
+fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture) void {
     for (player.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             if (element == sol) {
                 const rw: i32 = @intCast(cIndex);
                 const col: i32 = @intCast(rIndex);
                 rl.drawTexture(plat_t, boxSize * rw, col * boxSize, rl.Color.white);
+            }
+            if (element == vic) {
+                const rw: i32 = @intCast(cIndex);
+                const col: i32 = @intCast(rIndex);
+                rl.drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white);
             }
         }
     }
@@ -109,7 +124,8 @@ fn fullScreen() void {
 
 //Cehcks if a given position is a valid location for the player to move.
 pub fn posMoveable(x: i32, y: i32) bool {
-    if (getBlockAt(x, y) == air or getBlockAt(x, y) == blockType.frt) {
+    const blk = getBlockAt(x, y);
+    if (blk == air or blk == frt or blk == vic) {
         return true;
     }
     return false;

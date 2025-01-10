@@ -7,6 +7,7 @@ const air = blockType.air;
 const spk = blockType.spk;
 const bdy = blockType.bdy;
 const frt = blockType.frt;
+const vic = blockType.vic;
 const pos = player.pos;
 //End of header stuff.
 
@@ -15,9 +16,9 @@ pub const map = [9][16]blockType{
     [_]blockType{ air, air, air, air, air, sol, air, air, air, air, air, air, air, air, air, air },
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, sol, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, sol, air, sol, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ frt, air, air, sol, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, sol, vic, sol, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ frt, air, air, sol, air, air, air, air, air, air, air, air, air, air, air, vic },
     [_]blockType{ sol, air, air, sol, air, air, air, air, air, air, air, air, air, sol, air, air },
     [_]blockType{ sol, sol, sol, sol, sol, air, air, air, air, air, air, air, air, air, sol, air },
 };

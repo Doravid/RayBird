@@ -84,7 +84,11 @@ fn movePlayer(dir: direction) void {
             body.items[0].y += game.boxSize;
         },
     }
-    if (game.getBlockAt(body.items[0].x, body.items[0].y) == frt) {
+    const newHead = game.getBlockAt(body.items[0].x, body.items[0].y);
+    if (newHead == blockType.vic and levelManager.getCurrentLevelNum() + 1 < levelManager.numLevels) {
+        levelManager.setLevel(levelManager.getCurrentLevelNum() + 1);
+    }
+    if (newHead == blockType.frt) {
         body.append(tail) catch |err| {
             std.debug.print("Failed to append position: {}\n", .{err});
             return;

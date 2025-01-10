@@ -49,8 +49,18 @@ pub fn setLevel(levelNumber: usize) void {
 pub fn getLevelMap() [9][16]game.blockType {
     return maps[currentLevelNumber];
 }
+pub fn getCurrentLevelNum() usize {
+    return currentLevelNumber;
+}
 pub fn getBody() []player.pos {
     return bodies[currentLevelNumber];
+}
+pub fn checkPause() bool {
+    if (rl.isKeyPressed(rl.KeyboardKey.escape)) {
+        currentMenu = menuType.main;
+        return true;
+    }
+    return false;
 }
 
 const menuType = enum { main, levelSelect, pauseMenu };
