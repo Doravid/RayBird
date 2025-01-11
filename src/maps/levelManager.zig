@@ -34,6 +34,7 @@ const bodies = [_][]player.pos{
 pub const numLevels: i32 = maps.len;
 
 var currentLevel = maps[0];
+var maxLevelUnlocked: usize = 0;
 
 var currentLevelNumber: usize = 0;
 pub fn setLevel(levelNumber: usize) void {
@@ -43,6 +44,9 @@ pub fn setLevel(levelNumber: usize) void {
     currentLevel = maps[levelNumber];
 
     currentLevelNumber = levelNumber;
+    if (levelNumber > maxLevelUnlocked) {
+        maxLevelUnlocked = levelNumber;
+    }
     player.initPlayer();
 }
 
@@ -84,7 +88,7 @@ pub fn loadMenu() bool {
     }
     if (currentMenu == menuType.levelSelect) {
         var i: i32 = 0;
-        while (i < maps.len) {
+        while (i < maxLevelUnlocked + 1) {
             const max_len = 20;
             var buf: [max_len]u8 = undefined;
             const numAsString = std.fmt.bufPrintZ(&buf, "{}", .{i + 1}) catch |err| {
