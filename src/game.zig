@@ -23,15 +23,13 @@ pub var screenWidth: i32 = windowedWidth;
 pub var screenHeight: i32 = windowedHeight;
 
 pub var boxSize: i32 = 120;
-const pos = player.pos;
-
 pub fn runGame() void {
     // Initialization
     //--------------------------------------------------------------------------------------
     defer player.undoHistory.deinit();
     defer player.redoHistory.deinit();
-    rl.initWindow(screenWidth, screenHeight, "Boxes");
-    rl.setTargetFPS(240); // Set our game to run at 60 frames-per-second
+    rl.initWindow(screenWidth, screenHeight, "RayBird");
+    rl.setTargetFPS(240);
     rl.setExitKey(rl.KeyboardKey.delete);
 
     var box = rl.loadImage("resources\\box.png");
@@ -60,7 +58,7 @@ pub fn runGame() void {
     //--------------------------------------------------------------------------------------
 
     // Main game loop
-    while (!rl.windowShouldClose()) { // Detect window close button or ESC key
+    while (!rl.windowShouldClose()) { // Detect window close button or DEL key
         // Update
         player.updateGravity();
         player.updatePos();
@@ -79,7 +77,6 @@ pub fn runGame() void {
             drawMap(plat_t, victory_t);
             drawFruit(fruit_t);
             checkLevelChange();
-            //player.initPlayer();
             player.drawPlayer(box_t);
         }
         rl.drawFPS(0, 0);
@@ -140,6 +137,7 @@ pub fn getBlockAt(x: i32, y: i32) blockType {
     }
     return player.mat16x9[@intCast(new_y)][@intCast(new_x)];
 }
+//Uses screen coords (not box Coords, which are different and used by the mat16x9 array)
 pub fn setBlockAt(x: i32, y: i32, block: blockType) void {
     const new_x = @divTrunc(x, boxSize);
     const new_y = @divTrunc(y, boxSize);

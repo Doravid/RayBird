@@ -4,6 +4,7 @@ const gui = @import("raygui");
 const game = @import("..\\game.zig");
 const std = @import("std");
 const player = @import("..\\player.zig");
+const levelEditor = @import("levelEditor.zig");
 
 //I really dislike how this is done but I dislike how arrays in zig are handled even more... so this is what I get.
 //START OF PER LEVEl IMPORTS, MUST DO BOTH.
@@ -60,27 +61,37 @@ pub fn getBody() []player.pos {
     return bodies[currentLevelNumber];
 }
 pub fn checkPause() bool {
+    if (currentMenu == menuType.levelEditor) {
+        levelEditor.loadLevelEditor();
+    }
     if (rl.isKeyPressed(rl.KeyboardKey.escape)) {
         currentMenu = menuType.main;
         return true;
     }
+
     return false;
 }
 
-const menuType = enum { main, levelSelect, pauseMenu };
+const menuType = enum { main, levelSelect, pauseMenu, levelEditor };
 var currentMenu: menuType = menuType.main;
 const levelSelectRowSize: i32 = 6;
 pub fn loadMenu() bool {
     if (currentMenu == menuType.main) {
-        const startGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = -300 + @as(f32, @floatFromInt(game.screenHeight)) / 2 }, "Start Game!");
-        const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = -60.0 + @as(f32, @floatFromInt(game.screenHeight)) / 2 }, "Level Select");
-        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 180.0 + @as(f32, @floatFromInt(game.screenHeight)) / 2 }, "Quit");
+        const startGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 80 }, "Start Game!");
+        const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 320 }, "Level Select");
+        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 560 }, "Quit");
+        const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 800 }, "Level Editor");
 
         if (startGame_button == 1) {
             return false;
         }
         if (levelSelect_button == 1) {
             currentMenu = menuType.levelSelect;
+        }
+        if (levelEditor_button == 1) {
+            currentMenu = menuType.levelEditor;
+            player.clearPlayerAndMap();
+            return false;
         }
         if (quitGame_button == 1) {
             rl.closeWindow();

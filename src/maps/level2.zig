@@ -1,6 +1,7 @@
 //Header Stuff, All levels must have this.
 const game = @import("..\\game.zig");
 const player = @import("..\\player.zig");
+const rl = @import("raylib");
 const blockType = game.blockType;
 const sol = blockType.sol;
 const air = blockType.air;
@@ -9,6 +10,7 @@ const bdy = blockType.bdy;
 const frt = blockType.frt;
 const vic = blockType.vic;
 const pos = player.pos;
+
 //End of header stuff.
 
 //Level array:
