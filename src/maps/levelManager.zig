@@ -72,8 +72,8 @@ pub fn checkPause() bool {
     return false;
 }
 
-const menuType = enum { main, levelSelect, pauseMenu, levelEditor };
-var currentMenu: menuType = menuType.main;
+pub const menuType = enum { main, levelSelect, pauseMenu, levelEditor };
+pub var currentMenu: menuType = menuType.main;
 const levelSelectRowSize: i32 = 6;
 pub fn loadMenu() bool {
     if (currentMenu == menuType.main) {
