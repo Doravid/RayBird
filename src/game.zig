@@ -1,6 +1,5 @@
 // raylib-zig (c) Nikolas Wipper 2023 :D
 const rl = @import("raylib");
-const gui = @import("raygui");
 const std = @import("std");
 const player = @import("player.zig");
 const levelManager = @import("maps\\levelManager.zig");

@@ -6,7 +6,6 @@ const std = @import("std");
 const player = @import("..\\player.zig");
 const levelEditor = @import("levelEditor.zig");
 
-//I really dislike how this is done but I dislike how arrays in zig are handled even more... so this is what I get.
 //START OF PER LEVEl IMPORTS, MUST DO BOTH.
 const maps = [_][9][16]game.blockType{
     @import("level1.zig").map,

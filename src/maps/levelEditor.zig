@@ -19,8 +19,6 @@ pub var currentBlock: blockType = sol;
 const level = struct {
     map: [9][16]blockType,
     player: []player.pos,
-
-    /// Initializes a new Person with the given name, age, and height.
     const Self = @This();
     pub fn init(map: [9][16]blockType, playerA: []player.pos) Self {
         return .{ .map = map, .player = playerA };
@@ -57,24 +55,7 @@ pub fn loadLevelEditor() void {
                 std.debug.print("Failed to append position: {}\n", .{err});
                 return;
             };
-            const level1 = level.init(player.mat16x9, body.items);
-
-            const allocator = std.heap.page_allocator;
-
-            //Print to file
-            const string = json.stringifyAlloc(allocator, level1, .{ .emit_strings_as_arrays = false }) catch |err| {
-                std.debug.print("Failed to append position: {}\n", .{err});
-                return;
-            };
-            var file = fs.cwd().createFile("./src/maps/level1.json", .{}) catch |err| {
-                std.debug.print("Failed to append position: {}\n", .{err});
-                return;
-            };
-            defer file.close();
-            _ = file.writeAll(string) catch |err| {
-                std.debug.print("Failed to append position: {}\n", .{err});
-                return;
-            };
+            writeLevelToFile(level.init(player.mat16x9, body.items));
 
             std.debug.print("POS: {}\n", .{x});
         }
@@ -87,4 +68,28 @@ pub fn loadLevelEditor() void {
         if (x < 0) x = numBlocks - 1;
         currentBlock = @enumFromInt(x);
     }
+}
+
+fn writeLevelToFile(level1: level) void {
+    const allocator = std.heap.page_allocator;
+    var userInput: [64:0]u8 = undefined;
+    var view: bool = true;
+    const text_box = rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 80 };
+    while (true) {
+        _ = gui.guiTextInputBox(text_box, "User Input", "Please enter your username:", "OK;Cancel", &userInput, 64, &view);
+    }
+    //Print to file
+    const string = json.stringifyAlloc(allocator, level1, .{ .emit_strings_as_arrays = false }) catch |err| {
+        std.debug.print("Failed to append position: {}\n", .{err});
+        return;
+    };
+    var file = fs.cwd().createFile("./src/maps/level1.json", .{}) catch |err| {
+        std.debug.print("Failed to append position: {}\n", .{err});
+        return;
+    };
+    defer file.close();
+    _ = file.writeAll(string) catch |err| {
+        std.debug.print("Failed to append position: {}\n", .{err});
+        return;
+    };
 }
