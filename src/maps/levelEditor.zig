@@ -16,6 +16,17 @@ const nul = blockType.null;
 
 pub var currentBlock: blockType = sol;
 
+const level = struct {
+    map: [9][16]blockType,
+    player: []player.pos,
+
+    /// Initializes a new Person with the given name, age, and height.
+    const Self = @This();
+    pub fn init(map: [9][16]blockType, playerA: []player.pos) Self {
+        return .{ .map = map, .player = playerA };
+    }
+};
+
 pub const emptyMap = [9][16]blockType{
     [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
     [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
@@ -46,12 +57,16 @@ pub fn loadLevelEditor() void {
                 std.debug.print("Failed to append position: {}\n", .{err});
                 return;
             };
+            const level1 = level.init(player.mat16x9, body.items);
+
             const allocator = std.heap.page_allocator;
-            const string = json.stringifyAlloc(allocator, body.items, .{ .emit_strings_as_arrays = false }) catch |err| {
+
+            //Print to file
+            const string = json.stringifyAlloc(allocator, level1, .{ .emit_strings_as_arrays = false }) catch |err| {
                 std.debug.print("Failed to append position: {}\n", .{err});
                 return;
             };
-            var file = fs.cwd().createFile("./level1.json", .{}) catch |err| {
+            var file = fs.cwd().createFile("./src/maps/level1.json", .{}) catch |err| {
                 std.debug.print("Failed to append position: {}\n", .{err});
                 return;
             };
