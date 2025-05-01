@@ -30,6 +30,8 @@ pub var mat16x9 = [9][16]blockType{
 };
 //Player history!
 pub var undoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_allocator);
+var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.page_allocator);
+
 pub var redoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_allocator);
 
 //Player body.
@@ -42,11 +44,15 @@ pub fn updatePos() void {
     if (rl.isKeyPressed(rl.KeyboardKey.r)) {
         initPlayer();
     }
+    if (movementLocked) return;
+
     if (rl.isKeyPressed(rl.KeyboardKey.z) or rl.isKeyPressed(rl.KeyboardKey.backspace)) {
         undo();
     }
+    if (rl.isKeyPressed(rl.KeyboardKey.y) or rl.isKeyPressed(rl.KeyboardKey.r)) {
+        redo();
+    }
 
-    if (movementLocked) return;
     if ((rl.isKeyPressed(rl.KeyboardKey.w) or (rl.isKeyPressed(rl.KeyboardKey.up))) and (body.items[0].y) - game.boxSize >= 0) {
         if (game.posMoveable(body.items[0].x, body.items[0].y - game.boxSize)) {
             movePlayer(direction.up);
@@ -69,12 +75,41 @@ pub fn updatePos() void {
     }
 }
 fn undo() void {
+    if (undoHistory.items.len <= 0) return;
+    const oldBody = body.clone() catch |err| {
+        std.debug.print("Failed to append position: {}\n", .{err});
+        return;
+    };
+    redoHistory.append(oldBody) catch |err| {
+        std.debug.print("Failed to append position: {}\n", .{err});
+        return;
+    };
+    body = undoHistory.pop();
+
+    mat16x9 = mapHistory.pop();
+}
+
+fn redo() void {
+    if (redoHistory.items.len <= 0) return;
     var i: usize = 0;
     while (i < body.items.len) {
         game.setBlockAt(body.items[i].x, body.items[i].y, air);
         i += 1;
     }
-    body = undoHistory.pop();
+    const clone = body.clone() catch |err| {
+        std.debug.print("Failed to append position: {}\n", .{err});
+        return;
+    };
+    undoHistory.append(clone) catch |err| {
+        std.debug.print("Failed to append position: {}\n", .{err});
+        return;
+    };
+    mapHistory.append(mat16x9) catch |err| {
+        std.debug.print("Failed to append position: {}\n", .{err});
+        return;
+    };
+    body = redoHistory.pop();
+    i = 0;
     while (i < body.items.len) {
         game.setBlockAt(body.items[i].x, body.items[i].y, bdy);
         i += 1;
@@ -85,11 +120,15 @@ fn movePlayer(dir: direction) void {
         std.debug.print("Failed to append position: {}\n", .{err});
         return;
     };
-
     undoHistory.append(clone) catch |err| {
         std.debug.print("Failed to append position: {}\n", .{err});
         return;
     };
+    mapHistory.append(mat16x9) catch |err| {
+        std.debug.print("Failed to append position: {}\n", .{err});
+        return;
+    };
+    redoHistory.clearAndFree();
     var i: usize = body.items.len;
     const tail = body.items[body.items.len - 1];
     while (i > 1) {
@@ -188,6 +227,9 @@ pub fn drawPlayer(texture: rl.Texture) void {
 }
 pub fn initPlayer() void {
     body.clearAndFree();
+    undoHistory.clearAndFree();
+    redoHistory.clearAndFree();
+    mapHistory.clearAndFree();
     movementLocked = false;
     canFall = false;
     mat16x9 = levelManager.getLevelMap();

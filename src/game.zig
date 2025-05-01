@@ -101,20 +101,13 @@ pub fn runGame() void {
 fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture) void {
     for (player.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
-            if (element == sol) {
-                const rw: i32 = @intCast(cIndex);
-                const col: i32 = @intCast(rIndex);
-                rl.drawTexture(plat_t, boxSize * rw, col * boxSize, rl.Color.white);
-            }
-            if (element == vic) {
-                const rw: i32 = @intCast(cIndex);
-                const col: i32 = @intCast(rIndex);
-                rl.drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white);
-            }
-            if (element == blockType.frt) {
-                const rw: i32 = @intCast(cIndex);
-                const col: i32 = @intCast(rIndex);
-                rl.drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white);
+            const rw: i32 = @intCast(cIndex);
+            const col: i32 = @intCast(rIndex);
+            switch (element) {
+                sol => rl.drawTexture(plat_t, boxSize * rw, col * boxSize, rl.Color.white),
+                vic => rl.drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
+                frt => rl.drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white),
+                else => undefined,
             }
         }
     }
