@@ -29,7 +29,7 @@ pub fn runGame() void {
     defer player.undoHistory.deinit();
     defer player.redoHistory.deinit();
     rl.initWindow(screenWidth, screenHeight, "RayBird");
-    rl.setTargetFPS(240);
+    rl.setTargetFPS(9999);
     rl.setExitKey(rl.KeyboardKey.delete);
 
     var box = rl.loadImage("resources\\box.png");

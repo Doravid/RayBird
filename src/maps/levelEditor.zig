@@ -46,7 +46,9 @@ var view: bool = true;
 
 pub fn loadLevelEditor() void {
     const text_box = rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 80 };
-
+    if (!waitingOnInput and (rl.isKeyDown(rl.KeyboardKey.left_control) and rl.isKeyDown(rl.KeyboardKey.s))) {
+        waitingOnInput = true;
+    }
     if (rl.isMouseButtonPressed(rl.MouseButton.left) and !waitingOnInput) {
         const pos = rl.getMousePosition();
         const replacedBlock = game.getBlockAt(@intFromFloat(pos.x), @intFromFloat(pos.y));
@@ -60,20 +62,27 @@ pub fn loadLevelEditor() void {
                 std.debug.print("Failed to append position: {}\n", .{err});
                 return;
             };
-            if (!waitingOnInput) {
-                waitingOnInput = true;
-                return;
-            }
-
-            std.debug.print("POS: {}\n", .{x});
         }
     }
+
     if (waitingOnInput) {
-        userInput[0] = 'H';
         const res = gui.guiTextInputBox(text_box, "", "Please enter level name:", "Save;Cancel", &userInput, 64, &view);
+        if (res == -1) return;
+        var i: usize = 0;
         if (res == 1) {
             waitingOnInput = false;
             writeLevelToFile(level.init(player.mat16x9, body.items), userInput);
+            while (i < 64) {
+                userInput[i] = 0;
+                i += 1;
+            }
+        }
+        if (res == 2) {
+            waitingOnInput = false;
+            while (i < 64) {
+                userInput[i] = 0;
+                i += 1;
+            }
         }
     }
     const numBlocks: comptime_int = 5;
