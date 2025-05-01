@@ -120,6 +120,13 @@ pub fn updateGravity() void {
         i = body.items.len;
         while (i > 0) {
             i -= 1;
+
+            const block = game.getBlockAt(body.items[i].x, body.items[i].y + game.boxSize);
+            if (block == blockType.vic and levelManager.getCurrentLevelNum() + 1 < levelManager.numLevels) {
+                levelManager.setLevel(levelManager.getCurrentLevelNum() + 1);
+                break;
+            }
+
             game.setBlockAt(body.items[i].x, body.items[i].y, air);
         }
         fall();

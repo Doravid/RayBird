@@ -91,28 +91,29 @@ fn writeLevelToFile(level1: level, name: [64:0]u8) void {
 
     const name_slice = std.mem.sliceTo(&name, 0);
     const name_len = name_slice.len;
+
     const prefix = "./src/maps/";
     const suffix = ".json";
     const path = allocator.alloc(u8, prefix.len + name_len + suffix.len) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to allocate: {}\n", .{err});
         return;
     };
-    // std.mem.copyForwards(u8, path[0..], prefix);
-    // std.mem.copyForwards(u8, path[prefix.len..], name[0..name_len]);
-    // std.mem.copyForwards(u8, path[prefix.len + name_len ..], suffix);
+    std.mem.copyForwards(u8, path[0..], prefix);
+    std.mem.copyForwards(u8, path[prefix.len..], name[0..name_len]);
+    std.mem.copyForwards(u8, path[prefix.len + name_len ..], suffix);
 
     //Print to file
     const string = json.stringifyAlloc(allocator, level1, .{ .emit_strings_as_arrays = false }) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to stringify: {}\n", .{err});
         return;
     };
     var file = fs.cwd().createFile(path, .{}) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to createFile: {}\n", .{err});
         return;
     };
     defer file.close();
     _ = file.writeAll(string) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to writeAll: {}\n", .{err});
         return;
     };
 }
