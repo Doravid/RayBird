@@ -76,8 +76,7 @@ pub fn runGame() void {
         if (inMenus) {
             inMenus = levelManager.loadMenu();
         } else {
-            drawMap(plat_t, victory_t);
-            drawFruit(fruit_t);
+            drawMap(plat_t, victory_t, fruit_t);
             inMenus = levelManager.checkPause();
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
@@ -99,7 +98,7 @@ pub fn runGame() void {
     }
 }
 //Draws all of the boxes in the map each frame.
-fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture) void {
+fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture) void {
     for (player.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             if (element == sol) {
@@ -112,21 +111,14 @@ fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture) void {
                 const col: i32 = @intCast(rIndex);
                 rl.drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white);
             }
-        }
-    }
-}
-fn drawFruit(texture: rl.Texture) void {
-    for (player.mat16x9, 0..) |row, rIndex| {
-        for (row, 0..) |element, cIndex| {
             if (element == blockType.frt) {
                 const rw: i32 = @intCast(cIndex);
                 const col: i32 = @intCast(rIndex);
-                rl.drawTexture(texture, boxSize * rw, col * boxSize, rl.Color.white);
+                rl.drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white);
             }
         }
     }
 }
-
 fn fullScreen() void {
     if (rl.isKeyPressed(rl.KeyboardKey.f11)) {
         rl.toggleFullscreen();
