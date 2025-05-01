@@ -29,7 +29,7 @@ pub fn runGame() void {
     defer player.undoHistory.deinit();
     defer player.redoHistory.deinit();
     rl.initWindow(screenWidth, screenHeight, "RayBird");
-    rl.setTargetFPS(9999);
+    rl.setTargetFPS(240);
     rl.setExitKey(rl.KeyboardKey.delete);
 
     var box = rl.loadImage("resources\\box.png");
@@ -77,7 +77,6 @@ pub fn runGame() void {
             inMenus = levelManager.loadMenu();
         } else {
             drawMap(plat_t, victory_t, fruit_t);
-            inMenus = levelManager.checkPause();
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
                     sol => plat_t,
@@ -92,6 +91,7 @@ pub fn runGame() void {
             }
             checkLevelChange();
             player.drawPlayer(box_t);
+            inMenus = levelManager.checkPause();
         }
         rl.drawFPS(0, 0);
         //----------------------------------------------------------------------------------

@@ -66,7 +66,7 @@ pub fn loadLevelEditor() void {
     }
 
     if (waitingOnInput) {
-        const res = gui.guiTextInputBox(text_box, "", "Please enter level name:", "Save;Cancel", &userInput, 64, &view);
+        const res = gui.guiTextInputBox(text_box, "Save Level", "Please enter level name:", "Save;Cancel", &userInput, 64, &view);
         if (res == -1) return;
         var i: usize = 0;
         if (res == 1) {
