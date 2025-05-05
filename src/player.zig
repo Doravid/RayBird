@@ -12,21 +12,21 @@ const air = blockType.air;
 const spk = blockType.spk;
 const bdy = blockType.bdy;
 const frt = blockType.frt;
-const nul = blockType.null;
 const direction = enum { up, down, left, right };
 var movementLocked = false;
 var canFall = false;
 //Current Map State.
+
 pub var mat16x9 = [9][16]blockType{
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
 };
 //Player history!
 pub var undoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_allocator);
@@ -36,13 +36,13 @@ pub var redoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_alloc
 
 //Player body.
 //0 is always the head, body.items.len is always the floating tail (The square right behind the tail. )
-var body = std.ArrayList(pos).init(std.heap.page_allocator);
+pub var body = std.ArrayList(pos).init(std.heap.page_allocator);
 
 //Moves the player and adds their previous position to player history. (If the move is valid ofc)
 //Moves the player and adds their previous position to player history. (If the move is valid ofc)
 pub fn updatePos() void {
     if (rl.isKeyPressed(rl.KeyboardKey.r)) {
-        initPlayer();
+        levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
     }
     if (movementLocked) return;
 
@@ -54,6 +54,7 @@ pub fn updatePos() void {
     }
 
     if ((rl.isKeyPressed(rl.KeyboardKey.w) or (rl.isKeyPressed(rl.KeyboardKey.up))) and (body.items[0].y) - game.boxSize >= 0) {
+        std.debug.print("{}", .{body.items[0].y});
         if (game.posMoveable(body.items[0].x, body.items[0].y - game.boxSize)) {
             movePlayer(direction.up);
         }
@@ -116,6 +117,7 @@ fn redo() void {
     }
 }
 fn movePlayer(dir: direction) void {
+    std.debug.print("twstjhasdf", .{});
     const clone = body.clone() catch |err| {
         std.debug.print("Failed to append position: {}\n", .{err});
         return;
@@ -150,8 +152,8 @@ fn movePlayer(dir: direction) void {
         },
     }
     const newHead = game.getBlockAt(body.items[0].x, body.items[0].y);
-    if (newHead == blockType.vic and levelManager.getCurrentLevelNum() + 1 < levelManager.numLevels) {
-        levelManager.setLevel(levelManager.getCurrentLevelNum() + 1);
+    if (newHead == blockType.vic) {
+        levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
     }
     if (newHead == blockType.frt) {
         body.append(tail) catch |err| {
@@ -177,7 +179,7 @@ pub fn updateGravity() void {
         }
         if (block == blockType.null) {
             body.clearAndFree();
-            initPlayer();
+            levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
         }
     }
     if (canFall) {
@@ -187,8 +189,8 @@ pub fn updateGravity() void {
             i -= 1;
 
             const block = game.getBlockAt(body.items[i].x, body.items[i].y + game.boxSize);
-            if (block == blockType.vic and levelManager.getCurrentLevelNum() + 1 < levelManager.numLevels) {
-                levelManager.setLevel(levelManager.getCurrentLevelNum() + 1);
+            if (block == blockType.vic) {
+                levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
                 break;
             }
 
@@ -232,33 +234,18 @@ pub fn initPlayer() void {
     mapHistory.clearAndFree();
     movementLocked = false;
     canFall = false;
-    mat16x9 = levelManager.getLevelMap();
-    const tempBody = levelManager.getBody();
-
-    for (tempBody) |elem| {
-        body.append(elem) catch |err| {
-            std.debug.print("Failed to append position: {}\n", .{err});
-            return;
-        };
-    }
-
-    var i = body.items.len;
-    while (i > 0) {
-        i -= 1;
-        game.setBlockAt(body.items[i].x, body.items[i].y, bdy);
-    }
 }
 pub fn clearPlayerAndMap() void {
     mat16x9 = [9][16]blockType{
-        [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-        [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-        [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-        [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-        [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-        [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-        [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-        [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-        [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     };
     body.clearAndFree();
 }

@@ -13,20 +13,19 @@ const air = blockType.air;
 const spk = blockType.spk;
 const bdy = blockType.bdy;
 const frt = blockType.frt;
-const nul = blockType.null;
 pub var currentBlock: blockType = sol;
 var waitingOnInput = false;
 
 pub const emptyMap = [9][16]blockType{
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
-    [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
+    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
 };
 pub fn initLevelEditor() void {
     player.mat16x9 = emptyMap;
@@ -44,7 +43,6 @@ pub fn loadLevelEditor() void {
     if (rl.isMouseButtonPressed(rl.MouseButton.left) and !waitingOnInput) {
         const pos = rl.getMousePosition();
         const replacedBlock = game.getBlockAt(@intFromFloat(pos.x), @intFromFloat(pos.y));
-        if (currentBlock == nul and replacedBlock == bdy) {}
         game.setBlockAt(@intFromFloat(pos.x), @intFromFloat(pos.y), currentBlock);
         if (currentBlock == bdy and replacedBlock != bdy) {
             const x = @as(i32, @intFromFloat(pos.x / 120)) * 120;

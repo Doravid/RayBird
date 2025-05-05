@@ -50,8 +50,6 @@ pub fn runGame() !void {
     const victory_t = rl.loadTextureFromImage(victory);
     const del_t = rl.loadTextureFromImage(del);
 
-    player.initPlayer();
-
     defer rl.unloadImage(box);
     defer rl.unloadImage(plat);
     defer rl.unloadImage(fruit);
@@ -74,7 +72,7 @@ pub fn runGame() !void {
         rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.ray_white, Color.sky_blue);
 
         if (inMenus) {
-            inMenus = try levelManager.loadMenu();
+            inMenus = levelManager.loadMenu();
         } else {
             drawMap(plat_t, victory_t, fruit_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
@@ -89,7 +87,6 @@ pub fn runGame() !void {
                 rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(screenWidth - 80)), .y = 20, .height = 60, .width = 60 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
                 rl.drawText("Current Block", screenWidth - 100, 85, 14, Color.black);
             }
-            checkLevelChange();
             player.drawPlayer(box_t);
             inMenus = levelManager.checkPause();
         }
@@ -122,7 +119,7 @@ fn fullScreen() void {
 //Cehcks if a given position is a valid location for the player to move.
 pub fn posMoveable(x: i32, y: i32) bool {
     const blk = getBlockAt(x, y);
-    if (blk == air or blk == frt or blk == vic) {
+    if (blk == air or blk == frt or blk == vic or blk == blockType.null) {
         return true;
     }
     return false;
