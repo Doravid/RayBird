@@ -5,12 +5,18 @@ const game = @import("..\\game.zig");
 const std = @import("std");
 const player = @import("..\\player.zig");
 const levelEditor = @import("levelEditor.zig");
-
+pub const level = struct {
+    map: [9][16]game.blockType,
+    player: []player.pos,
+    const Self = @This();
+    pub fn init(map: [9][16]game.blockType, playerA: []player.pos) Self {
+        return .{ .map = map, .player = playerA };
+    }
+};
 //START OF PER LEVEl IMPORTS, MUST DO BOTH.
 const maps = [_][9][16]game.blockType{
     @import("level1.zig").map,
     @import("level2.zig").map,
-    //Testing
     @import("level2.zig").map,
     @import("level2.zig").map,
     @import("level2.zig").map,
@@ -32,6 +38,17 @@ const bodies = [_][]player.pos{
 //END OF PER LEVEL IMPORTS
 
 pub const numLevels: i32 = maps.len;
+fn loadLevelFromJson() ![9][16]game.blockType {
+    var thing = std.heap.GeneralPurposeAllocator(.{}){};
+    const alloc = thing.allocator();
+    const jsonData = try std.fs.cwd().readFileAlloc(alloc, "./src/maps/save.json", 2048);
+
+    const result = try std.json.parseFromSlice(level, alloc, jsonData, .{
+        .ignore_unknown_fields = true,
+    });
+
+    return result.value.map;
+}
 
 var currentLevel = maps[0];
 var maxLevelUnlocked: usize = 0;
@@ -74,7 +91,7 @@ pub fn checkPause() bool {
 pub const menuType = enum { main, levelSelect, pauseMenu, levelEditor };
 pub var currentMenu: menuType = menuType.main;
 const levelSelectRowSize: i32 = 6;
-pub fn loadMenu() bool {
+pub fn loadMenu() !bool {
     if (currentMenu == menuType.main) {
         const startGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 80 }, "Start Game!");
         const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 320 }, "Level Select");
@@ -82,6 +99,7 @@ pub fn loadMenu() bool {
         const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 800 }, "Level Editor");
 
         if (startGame_button == 1) {
+            player.mat16x9 = try loadLevelFromJson();
             return false;
         }
         if (levelSelect_button == 1) {
@@ -105,8 +123,8 @@ pub fn loadMenu() bool {
                 std.debug.print("{}", .{err});
                 return true;
             };
-            const level = numAsString.ptr;
-            const levelButton = gui.guiButton(rl.Rectangle{ .height = 2.0 * @as(f32, @floatFromInt(game.boxSize)), .width = 2.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth * (@mod(i, levelSelectRowSize)))) / 6.0) + 60, .y = @as(f32, @floatFromInt(@divTrunc(game.boxSize, 6) + game.boxSize * @divTrunc(i, 6))) * 2.5 }, level);
+            const curLevel = numAsString.ptr;
+            const levelButton = gui.guiButton(rl.Rectangle{ .height = 2.0 * @as(f32, @floatFromInt(game.boxSize)), .width = 2.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth * (@mod(i, levelSelectRowSize)))) / 6.0) + 60, .y = @as(f32, @floatFromInt(@divTrunc(game.boxSize, 6) + game.boxSize * @divTrunc(i, 6))) * 2.5 }, curLevel);
             if (levelButton == 1) {
                 setLevel(@intCast(i));
                 return false;

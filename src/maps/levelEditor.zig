@@ -3,6 +3,7 @@ const player = @import("..\\player.zig");
 const rl = @import("raylib");
 const gui = @import("raygui");
 const std = @import("std");
+const levelManager = @import("levelManager.zig");
 const fs = std.fs;
 const json = std.json;
 
@@ -15,15 +16,6 @@ const frt = blockType.frt;
 const nul = blockType.null;
 pub var currentBlock: blockType = sol;
 var waitingOnInput = false;
-
-const level = struct {
-    map: [9][16]blockType,
-    player: []player.pos,
-    const Self = @This();
-    pub fn init(map: [9][16]blockType, playerA: []player.pos) Self {
-        return .{ .map = map, .player = playerA };
-    }
-};
 
 pub const emptyMap = [9][16]blockType{
     [_]blockType{ nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul, nul },
@@ -71,7 +63,7 @@ pub fn loadLevelEditor() void {
         var i: usize = 0;
         if (res == 1) {
             waitingOnInput = false;
-            writeLevelToFile(level.init(player.mat16x9, body.items), userInput);
+            writeLevelToFile(levelManager.level.init(player.mat16x9, body.items), userInput);
             while (i < 64) {
                 userInput[i] = 0;
                 i += 1;
@@ -95,7 +87,7 @@ pub fn loadLevelEditor() void {
     }
 }
 
-fn writeLevelToFile(level1: level, name: [64:0]u8) void {
+fn writeLevelToFile(level1: levelManager.level, name: [64:0]u8) void {
     const allocator = std.heap.page_allocator;
 
     const name_slice = std.mem.sliceTo(&name, 0);

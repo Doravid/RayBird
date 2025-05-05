@@ -23,7 +23,7 @@ pub var screenWidth: i32 = windowedWidth;
 pub var screenHeight: i32 = windowedHeight;
 
 pub var boxSize: i32 = 120;
-pub fn runGame() void {
+pub fn runGame() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
     defer player.undoHistory.deinit();
@@ -74,7 +74,7 @@ pub fn runGame() void {
         rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.ray_white, Color.sky_blue);
 
         if (inMenus) {
-            inMenus = levelManager.loadMenu();
+            inMenus = try levelManager.loadMenu();
         } else {
             drawMap(plat_t, victory_t, fruit_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
