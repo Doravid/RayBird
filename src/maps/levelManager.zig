@@ -24,24 +24,24 @@ pub fn loadLevelFromJson(name: u32) level {
     const suffix = ".json";
 
     const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
-        std.debug.print("9999999999999{}", .{err});
+        std.debug.print("Failed to Merge the int and the string: {}", .{err});
         return level.init(player.mat16x9, &[_]player.pos{});
     };
     const path = alloc.alloc(u8, newPrefix.len + suffix.len) catch |err| {
-        std.debug.print("Failed to allocate: {}\n", .{err});
+        std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
         return level.init(player.mat16x9, &[_]player.pos{});
     };
     std.mem.copyForwards(u8, path[0..], newPrefix);
     std.mem.copyForwards(u8, path[newPrefix.len..], suffix);
     const jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
-        std.debug.print("00000000000000{}", .{err});
+        std.debug.print("Failed to read the file: {}", .{err});
         return level.init(player.mat16x9, &[_]player.pos{});
     };
 
     const result = std.json.parseFromSlice(level, alloc, jsonData, .{
         .ignore_unknown_fields = true,
     }) catch |err| {
-        std.debug.print("---------{}", .{err});
+        std.debug.print("Failed to parse json: {}", .{err});
         return level.init(player.mat16x9, &[_]player.pos{});
     };
 
@@ -56,16 +56,14 @@ pub fn setLevel(levelNumber: u32) void {
     const levelA = loadLevelFromJson(levelNumber);
     currentLevelNumber = levelNumber;
     if (levelNumber > maxLevelUnlocked) {
-        maxLevelUnlocked = levelNumber;
+        maxLevelUnlocked = levelNumber - 1;
     }
-    std.debug.print("tempBody {any}\n", .{levelA.player});
     for (levelA.player) |elem| {
         player.body.append(elem) catch |err| {
             std.debug.print("Failed to append position: {}\n", .{err});
             return;
         };
     }
-    std.debug.print("tempBody {any}\n", .{player.body.items});
     player.mat16x9 = levelA.map;
 }
 pub fn getCurrentLevelNum() usize {
@@ -102,6 +100,7 @@ pub fn loadMenu() bool {
         if (levelEditor_button == 1) {
             currentMenu = menuType.levelEditor;
             player.clearPlayerAndMap();
+            levelEditor.body.clearAndFree();
             return false;
         }
         if (quitGame_button == 1) {

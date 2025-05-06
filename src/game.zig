@@ -37,22 +37,28 @@ pub fn runGame() !void {
     var fruit = rl.loadImage("resources\\fruit.png");
     var victory = rl.loadImage("resources\\victory.png");
     var del = rl.loadImage("resources\\delete.png");
+    var spike = rl.loadImage("resources\\spike.png");
 
     rl.imageResize(&box, boxSize, boxSize);
     rl.imageResizeNN(&plat, boxSize, boxSize);
     rl.imageResize(&fruit, boxSize, boxSize);
     rl.imageResize(&victory, boxSize, boxSize);
     rl.imageResize(&del, boxSize, boxSize);
+    rl.imageResize(&spike, boxSize, boxSize);
 
     const box_t = rl.loadTextureFromImage(box);
     const plat_t = rl.loadTextureFromImage(plat);
     const fruit_t = rl.loadTextureFromImage(fruit);
     const victory_t = rl.loadTextureFromImage(victory);
     const del_t = rl.loadTextureFromImage(del);
+    const spike_t = rl.loadTextureFromImage(spike);
 
     defer rl.unloadImage(box);
     defer rl.unloadImage(plat);
     defer rl.unloadImage(fruit);
+    defer rl.unloadImage(victory);
+    defer rl.unloadImage(del);
+    defer rl.unloadImage(spike);
 
     defer rl.closeWindow(); // Close window and OpenGL context
     var inMenus: bool = true;
@@ -74,7 +80,7 @@ pub fn runGame() !void {
         if (inMenus) {
             inMenus = levelManager.loadMenu();
         } else {
-            drawMap(plat_t, victory_t, fruit_t);
+            drawMap(plat_t, victory_t, fruit_t, spike_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
                     sol => plat_t,
@@ -82,6 +88,7 @@ pub fn runGame() !void {
                     bdy => box_t,
                     air => del_t,
                     vic => victory_t,
+                    spk => spike_t,
                     else => undefined,
                 };
                 rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(screenWidth - 80)), .y = 20, .height = 60, .width = 60 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
@@ -95,7 +102,7 @@ pub fn runGame() !void {
     }
 }
 //Draws all of the boxes in the map each frame.
-fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture) void {
+fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture) void {
     for (player.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             const rw: i32 = @intCast(cIndex);
@@ -104,6 +111,7 @@ fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture) void 
                 sol => rl.drawTexture(plat_t, boxSize * rw, col * boxSize, rl.Color.white),
                 vic => rl.drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
                 frt => rl.drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white),
+                spk => rl.drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
                 else => undefined,
             }
         }
@@ -119,7 +127,7 @@ fn fullScreen() void {
 //Cehcks if a given position is a valid location for the player to move.
 pub fn posMoveable(x: i32, y: i32) bool {
     const blk = getBlockAt(x, y);
-    if (blk == air or blk == frt or blk == vic or blk == blockType.null) {
+    if (blk == air or blk == frt or blk == vic or blk == spk) {
         return true;
     }
     return false;
@@ -143,10 +151,4 @@ pub fn setBlockAt(x: i32, y: i32, block: blockType) void {
         return;
     }
     player.mat16x9[@intCast(new_y)][@intCast(new_x)] = block;
-}
-
-fn checkLevelChange() void {
-    const x: i16 = @intCast(@intFromEnum(rl.getKeyPressed()));
-    if (x < 49 or x > 57) return;
-    levelManager.setLevel(@intCast(x - 49));
 }

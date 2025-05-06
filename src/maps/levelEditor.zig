@@ -30,7 +30,7 @@ pub const emptyMap = [9][16]blockType{
 pub fn initLevelEditor() void {
     player.mat16x9 = emptyMap;
 }
-var body = std.ArrayList(player.pos).init(std.heap.page_allocator);
+pub var body = std.ArrayList(player.pos).init(std.heap.page_allocator);
 
 var userInput: [64:0]u8 = undefined;
 var view: bool = true;
@@ -43,15 +43,19 @@ pub fn loadLevelEditor() void {
     if (rl.isMouseButtonPressed(rl.MouseButton.left) and !waitingOnInput) {
         const pos = rl.getMousePosition();
         const replacedBlock = game.getBlockAt(@intFromFloat(pos.x), @intFromFloat(pos.y));
-        game.setBlockAt(@intFromFloat(pos.x), @intFromFloat(pos.y), currentBlock);
-        if (currentBlock == bdy and replacedBlock != bdy) {
-            const x = @as(i32, @intFromFloat(pos.x / 120)) * 120;
-            const y = @as(i32, @intFromFloat(pos.y / 120)) * 120;
+        if (currentBlock != bdy) game.setBlockAt(@intFromFloat(pos.x), @intFromFloat(pos.y), currentBlock);
 
-            body.append(player.pos{ .x = x, .y = y }) catch |err| {
-                std.debug.print("Failed to append position: {}\n", .{err});
-                return;
-            };
+        if (currentBlock == bdy and replacedBlock != bdy) {
+            const x = @as(i32, @intFromFloat(pos.x / @as(f32, @floatFromInt(game.boxSize)))) * game.boxSize;
+            const y = @as(i32, @intFromFloat(pos.y / @as(f32, @floatFromInt(game.boxSize)))) * game.boxSize;
+            std.debug.print("x: {}, y: {} \n", .{ x, y });
+            if (body.items.len == 0 or (@abs(x - body.items[0].x) == game.boxSize and y - body.items[0].y == 0) or (@abs(y - body.items[0].y) == game.boxSize and x - body.items[0].x == 0)) {
+                body.insert(0, player.pos{ .x = x, .y = y }) catch |err| {
+                    std.debug.print("Failed to append position: {}\n", .{err});
+                    return;
+                };
+                game.setBlockAt(@intFromFloat(pos.x), @intFromFloat(pos.y), currentBlock);
+            }
         }
     }
 
@@ -75,9 +79,9 @@ pub fn loadLevelEditor() void {
             }
         }
     }
-    const numBlocks: comptime_int = 5;
+    const numBlocks: comptime_int = 6;
     if (rl.getMouseWheelMove() > 0) {
-        currentBlock = @enumFromInt(@mod(@intFromEnum(currentBlock) + 1, 5));
+        currentBlock = @enumFromInt(@mod(@intFromEnum(currentBlock) + 1, numBlocks));
     } else if (rl.getMouseWheelMove() < 0) {
         var x = @intFromEnum(currentBlock) - 1;
         if (x < 0) x = numBlocks - 1;

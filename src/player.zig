@@ -117,7 +117,8 @@ fn redo() void {
     }
 }
 fn movePlayer(dir: direction) void {
-    std.debug.print("twstjhasdf", .{});
+    redoHistory.clearAndFree();
+
     const clone = body.clone() catch |err| {
         std.debug.print("Failed to append position: {}\n", .{err});
         return;
@@ -130,7 +131,6 @@ fn movePlayer(dir: direction) void {
         std.debug.print("Failed to append position: {}\n", .{err});
         return;
     };
-    redoHistory.clearAndFree();
     var i: usize = body.items.len;
     const tail = body.items[body.items.len - 1];
     while (i > 1) {
@@ -155,6 +155,9 @@ fn movePlayer(dir: direction) void {
     if (newHead == blockType.vic) {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
     }
+    if (newHead == blockType.spk) {
+        levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
+    }
     if (newHead == blockType.frt) {
         body.append(tail) catch |err| {
             std.debug.print("Failed to append position: {}\n", .{err});
@@ -163,12 +166,13 @@ fn movePlayer(dir: direction) void {
     } else {
         game.setBlockAt(tail.x, tail.y, air);
     }
-    game.setBlockAt(body.items[0].x, body.items[0].y, bdy);
+    if (body.items.len > 0) game.setBlockAt(body.items[0].x, body.items[0].y, bdy);
 }
 pub fn updateGravity() void {
     var i: usize = body.items.len;
     canFall = true;
     movementLocked = false;
+    var shouldDie = false;
     while (i > 0) {
         i -= 1;
         const block = game.getBlockAt(body.items[i].x, body.items[i].y + game.boxSize);
@@ -178,11 +182,17 @@ pub fn updateGravity() void {
             break;
         }
         if (block == blockType.null) {
-            body.clearAndFree();
             levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
+        }
+        if (block == blockType.spk) {
+            shouldDie = true;
         }
     }
     if (canFall) {
+        if (shouldDie) {
+            levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
+            return;
+        }
         movementLocked = true;
         i = body.items.len;
         while (i > 0) {
