@@ -3,7 +3,7 @@
 ## Credits
 
 Credit to [RayLib](https://github.com/raysan5/raylib) for the library and to [raylib-zig](https://github.com/Not-Nik/raylib-zig) for the Zig bindings. <br>
-Another massive thanks to [Snake Bird](https://store.steampowered.com/app/357300/Snakebird/) for being such a fun game.
+Thank you to [Snake Bird](https://store.steampowered.com/app/357300/Snakebird/) for being such a fun game.
 
 ## Building
 
@@ -11,6 +11,16 @@ Another massive thanks to [Snake Bird](https://store.steampowered.com/app/357300
 2. Initialize a project using raylib-zig.
 3. Clone this project into the folder, replacing any old files.
 4. While in the project directory run `zig build run`.
+
+## TODO
+
+* Dynamic Backgrounds
+* Multiple Playable Snakes
+* Updated Snake Graphics
+* Pushable Objects
+* Portals
+* New UI
+* Resolution Changing
 
 ## The Game
 

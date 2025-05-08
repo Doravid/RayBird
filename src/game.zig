@@ -46,12 +46,15 @@ pub fn runGame() !void {
     var del = rl.loadImage("resources\\delete.png");
     var spike = rl.loadImage("resources\\spike.png");
 
+    var cloud = rl.loadImage("resources\\cloud1.png");
+
     rl.imageResize(&box, boxSize, boxSize);
     rl.imageResizeNN(&plat, boxSize, boxSize);
     rl.imageResize(&fruit, boxSize, boxSize);
     rl.imageResize(&victory, boxSize, boxSize);
     rl.imageResize(&del, boxSize, boxSize);
     rl.imageResize(&spike, boxSize, boxSize);
+    rl.imageResize(&cloud, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 5), boxSize * 3);
 
     const box_t = rl.loadTextureFromImage(box);
     const plat_t = rl.loadTextureFromImage(plat);
@@ -59,6 +62,7 @@ pub fn runGame() !void {
     const victory_t = rl.loadTextureFromImage(victory);
     const del_t = rl.loadTextureFromImage(del);
     const spike_t = rl.loadTextureFromImage(spike);
+    const cloud_t = rl.loadTextureFromImage(cloud);
 
     defer rl.unloadImage(box);
     defer rl.unloadImage(plat);
@@ -66,6 +70,7 @@ pub fn runGame() !void {
     defer rl.unloadImage(victory);
     defer rl.unloadImage(del);
     defer rl.unloadImage(spike);
+    defer rl.unloadImage(cloud);
 
     defer rl.closeWindow(); // Close window and OpenGL context
     var inMenus: bool = true;
@@ -82,8 +87,7 @@ pub fn runGame() !void {
         //Clear and draw background.
         rl.clearBackground(rl.Color.white);
         rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.sky_blue, Color.orange);
-        drawSmoothCircle(@divTrunc(screenWidth, 4), @divTrunc(screenHeight, 3), 130, 45, rl.Color.init(255, 250, 225, 230));
-
+        drawSky(cloud_t);
         if (inMenus) {
             inMenus = levelManager.loadMenu();
         } else {
@@ -109,12 +113,29 @@ pub fn runGame() !void {
         rl.drawTriangle(rl.Vector2{ .x = 0, .y = 0 }, rl.Vector2{ .x = 100, .y = 0 }, rl.Vector2{ .x = 50, .y = 100 }, rl.Color.yellow);
     }
 }
-pub fn drawSmoothCircle(x: i32, y: i32, radius: f32, segments: i32, color: rl.Color) void {
-    const _x = @as(f32, @floatFromInt(x));
-    const _y = @as(f32, @floatFromInt(y));
-
+fn drawSky(cloud_t: rl.Texture2D) void {
+    const time: f32 = @floatCast(rl.getTime());
+    const modTime: f64 = (std.math.mod(f64, time / 110, 1)) catch |err| {
+        std.debug.print("{}", .{err});
+        return;
+    };
+    const modTime2: f64 = (std.math.mod(f64, (time + 35) / 80, 1)) catch |err| {
+        std.debug.print("{}", .{err});
+        return;
+    };
+    const xCloud: i32 = @as(i32, @intFromFloat(modTime * 1.4 * @as(f32, @floatFromInt(screenWidth)))) - boxSize * 5;
+    const xCloud2: i32 = @as(i32, @intFromFloat(modTime2 * 1.4 * @as(f32, @floatFromInt(screenWidth)))) - boxSize * 5;
+    const x = @as(f32, @floatFromInt(screenWidth)) * @abs(std.math.sin(time / 500));
+    //Draw the Sun
+    drawSmoothCircle(x, @floatFromInt(@divTrunc(screenHeight, 3)), 130, 45, rl.Color.init(255, 245, 230, 255));
+    //draw the
+    rl.drawTexture(cloud_t, xCloud, boxSize, rl.Color.init(255, 250, 245, 230));
+    rl.drawTexture(cloud_t, screenWidth - xCloud - boxSize * 4, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 2.5), rl.Color.init(255, 250, 245, 230));
+    rl.drawTexture(cloud_t, xCloud2, boxSize * 2, rl.Color.init(255, 250, 245, 230));
+}
+pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Color) void {
     const angleStep = 2.0 * std.math.pi / @as(f32, @floatFromInt(segments));
-    const p0 = rl.Vector2{ .x = _x, .y = _y };
+    const p0 = rl.Vector2{ .x = x, .y = y };
 
     var i: i32 = 0;
     while (i < segments) : (i += 1) {
@@ -122,13 +143,13 @@ pub fn drawSmoothCircle(x: i32, y: i32, radius: f32, segments: i32, color: rl.Co
         const angle2 = @as(f32, @floatFromInt(i + 1)) * angleStep;
 
         const p1 = rl.Vector2{
-            .x = _x + @cos(angle1) * radius,
-            .y = _y + @sin(angle1) * radius,
+            .x = x + @cos(angle1) * radius,
+            .y = y + @sin(angle1) * radius,
         };
 
         const p2 = rl.Vector2{
-            .x = _x + @cos(angle2) * radius,
-            .y = _y + @sin(angle2) * radius,
+            .x = x + @cos(angle2) * radius,
+            .y = y + @sin(angle2) * radius,
         };
 
         // Draw triangle
@@ -152,7 +173,7 @@ fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike
     }
 }
 fn drawWater() void {
-    const time: f32 = @floatCast(rl.getTime() * 1.5);
+    const time: f32 = @floatCast(rl.getTime() * 1.35);
     rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time + 0.3) * 30 - 40), 70, Color.blue);
     rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time) * 20), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time) * 20), 100, Color.dark_blue);
 
