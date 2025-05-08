@@ -28,6 +28,13 @@ pub fn runGame() !void {
     //--------------------------------------------------------------------------------------
     defer player.undoHistory.deinit();
     defer player.redoHistory.deinit();
+    //To set config flags
+    const myFlag = rl.ConfigFlags{
+        .msaa_4x_hint = true,
+    };
+
+    rl.setConfigFlags(myFlag);
+
     rl.initWindow(screenWidth, screenHeight, "RayBird");
     rl.setTargetFPS(240);
     rl.setExitKey(rl.KeyboardKey.delete);
@@ -63,7 +70,6 @@ pub fn runGame() !void {
     defer rl.closeWindow(); // Close window and OpenGL context
     var inMenus: bool = true;
     //--------------------------------------------------------------------------------------
-
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or DEL key
         // Update
@@ -75,7 +81,8 @@ pub fn runGame() !void {
         defer rl.endDrawing();
         //Clear and draw background.
         rl.clearBackground(rl.Color.white);
-        rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.ray_white, Color.sky_blue);
+        rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.sky_blue, Color.orange);
+        drawSmoothCircle(@divTrunc(screenWidth, 4), @divTrunc(screenHeight, 3), 130, 45, rl.Color.init(255, 250, 225, 230));
 
         if (inMenus) {
             inMenus = levelManager.loadMenu();
@@ -98,7 +105,34 @@ pub fn runGame() !void {
             inMenus = levelManager.checkPause();
         }
         rl.drawFPS(0, 0);
-        //----------------------------------------------------------------------------------
+        drawWater();
+        rl.drawTriangle(rl.Vector2{ .x = 0, .y = 0 }, rl.Vector2{ .x = 100, .y = 0 }, rl.Vector2{ .x = 50, .y = 100 }, rl.Color.yellow);
+    }
+}
+pub fn drawSmoothCircle(x: i32, y: i32, radius: f32, segments: i32, color: rl.Color) void {
+    const _x = @as(f32, @floatFromInt(x));
+    const _y = @as(f32, @floatFromInt(y));
+
+    const angleStep = 2.0 * std.math.pi / @as(f32, @floatFromInt(segments));
+    const p0 = rl.Vector2{ .x = _x, .y = _y };
+
+    var i: i32 = 0;
+    while (i < segments) : (i += 1) {
+        const angle1 = @as(f32, @floatFromInt(i)) * angleStep;
+        const angle2 = @as(f32, @floatFromInt(i + 1)) * angleStep;
+
+        const p1 = rl.Vector2{
+            .x = _x + @cos(angle1) * radius,
+            .y = _y + @sin(angle1) * radius,
+        };
+
+        const p2 = rl.Vector2{
+            .x = _x + @cos(angle2) * radius,
+            .y = _y + @sin(angle2) * radius,
+        };
+
+        // Draw triangle
+        rl.drawTriangle(p2, p1, p0, color);
     }
 }
 //Draws all of the boxes in the map each frame.
@@ -116,6 +150,14 @@ fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike
             }
         }
     }
+}
+fn drawWater() void {
+    const time: f32 = @floatCast(rl.getTime() * 1.5);
+    rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time + 0.3) * 30 - 40), 70, Color.blue);
+    rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time) * 20), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time) * 20), 100, Color.dark_blue);
+
+    rl.drawLineBezier(rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time + 0.3) * 30 - 40), 70, Color.blue);
+    rl.drawLineBezier(rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time) * 20), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time) * 20), 100, Color.dark_blue);
 }
 fn fullScreen() void {
     if (rl.isKeyPressed(rl.KeyboardKey.f11)) {
