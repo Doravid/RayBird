@@ -104,7 +104,7 @@ pub fn runGame() !void {
             player.drawPlayer(box_t);
             inMenus = levelManager.checkPause();
         }
-        rl.drawFPS(0, 0);
+        //rl.drawFPS(0, 0);
         drawWater();
         rl.drawTriangle(rl.Vector2{ .x = 0, .y = 0 }, rl.Vector2{ .x = 100, .y = 0 }, rl.Vector2{ .x = 50, .y = 100 }, rl.Color.yellow);
     }
