@@ -7,9 +7,9 @@ const player = @import("..\\player.zig");
 const levelEditor = @import("levelEditor.zig");
 pub const level = struct {
     map: [9][16]game.blockType,
-    player: []player.pos,
+    player: []rl.Vector2,
     const Self = @This();
-    pub fn init(map: [9][16]game.blockType, playerA: []player.pos) Self {
+    pub fn init(map: [9][16]game.blockType, playerA: []rl.Vector2) Self {
         return .{ .map = map, .player = playerA };
     }
 };
@@ -25,24 +25,24 @@ pub fn loadLevelFromJson(name: u32) level {
 
     const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
         std.debug.print("Failed to Merge the int and the string: {}", .{err});
-        return level.init(player.mat16x9, &[_]player.pos{});
+        return level.init(player.mat16x9, &[_]rl.Vector2{});
     };
     const path = alloc.alloc(u8, newPrefix.len + suffix.len) catch |err| {
         std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
-        return level.init(player.mat16x9, &[_]player.pos{});
+        return level.init(player.mat16x9, &[_]rl.Vector2{});
     };
     std.mem.copyForwards(u8, path[0..], newPrefix);
     std.mem.copyForwards(u8, path[newPrefix.len..], suffix);
     const jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
         std.debug.print("Failed to read the file: {}", .{err});
-        return level.init(player.mat16x9, &[_]player.pos{});
+        return level.init(player.mat16x9, &[_]rl.Vector2{});
     };
 
     const result = std.json.parseFromSlice(level, alloc, jsonData, .{
         .ignore_unknown_fields = true,
     }) catch |err| {
         std.debug.print("Failed to parse json: {}", .{err});
-        return level.init(player.mat16x9, &[_]player.pos{});
+        return level.init(player.mat16x9, &[_]rl.Vector2{});
     };
 
     return result.value;

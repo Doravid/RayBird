@@ -30,7 +30,7 @@ pub const emptyMap = [9][16]blockType{
 pub fn initLevelEditor() void {
     player.mat16x9 = emptyMap;
 }
-pub var body = std.ArrayList(player.pos).init(std.heap.page_allocator);
+pub var body = std.ArrayList(rl.Vector2).init(std.heap.page_allocator);
 
 var userInput: [64:0]u8 = undefined;
 var view: bool = true;
@@ -42,18 +42,19 @@ pub fn loadLevelEditor() void {
     }
     if (rl.isMouseButtonPressed(rl.MouseButton.left) and !waitingOnInput) {
         const pos = rl.getMousePosition();
+        std.debug.print("x: {}, y: {} \n", .{ pos.x, pos.y });
         const replacedBlock = game.getBlockAt(pos.x, pos.y);
         if (currentBlock != bdy) game.setBlockAt(pos.x, pos.y, currentBlock);
 
         if (currentBlock == bdy and replacedBlock != bdy) {
-            const x = pos.x;
-            const y = pos.y;
-            std.debug.print("x: {}, y: {} \n", .{ x, y });
-            if (body.items.len == 0 or (@abs(x - body.items[0].x) == @as(f32, @floatFromInt(game.boxSize)) and y - body.items[0].y == 0) or (@abs(y - body.items[0].y) == @as(f32, @floatFromInt(game.boxSize)) and x - body.items[0].x == 0)) {
-                body.insert(0, player.pos{ .x = x, .y = y }) catch |err| {
+            const x: f32 = @as(f32, @floatFromInt(@divTrunc(@as(i32, @intFromFloat((pos.x))), game.boxSize))) * @as(f32, @floatFromInt(game.boxSize));
+            const y: f32 = @as(f32, @floatFromInt(@divTrunc(@as(i32, @intFromFloat((pos.y))), game.boxSize))) * @as(f32, @floatFromInt(game.boxSize));
+            if (body.items.len == 0 or (@abs(x - body.items[0].x) == @as(f32, @floatFromInt(game.boxSize)) and @abs(y - body.items[0].y) == 0) or (@abs(y - body.items[0].y) == @as(f32, @floatFromInt(game.boxSize)) and @abs(x - body.items[0].x) == 0)) {
+                body.insert(0, rl.Vector2{ .x = x, .y = y }) catch |err| {
                     std.debug.print("Failed to append position: {}\n", .{err});
                     return;
                 };
+
                 game.setBlockAt((pos.x), (pos.y), currentBlock);
             }
         }
@@ -86,13 +87,6 @@ pub fn loadLevelEditor() void {
         var x = @intFromEnum(currentBlock) - 1;
         if (x < 0) x = numBlocks - 1;
         currentBlock = @enumFromInt(x);
-    }
-}
-fn packBody() void {
-    var i = 0;
-    while (i < body.items.len) {
-        body.items[i].x = body.items[i].x / game.boxSize;
-        i += 1;
     }
 }
 fn writeLevelToFile(level1: levelManager.level, name: [64:0]u8) void {

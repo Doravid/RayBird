@@ -91,7 +91,7 @@ pub fn runGame() !void {
             inMenus = levelManager.loadMenu();
             _ = levelManager.checkPause();
         } else {
-            drawMap(plat_t, victory_t, fruit_t, spike_t);
+            drawMap(plat_t, victory_t, fruit_t, spike_t, box_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
                     sol => plat_t,
@@ -157,7 +157,7 @@ pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Co
     }
 }
 //Draws all of the boxes in the map each frame.
-fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture) void {
+fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, box_t: rl.Texture) void {
     for (player.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             const rw: i32 = @intCast(cIndex);
@@ -167,6 +167,7 @@ fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike
                 vic => rl.drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
                 frt => rl.drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white),
                 spk => rl.drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
+                bdy => rl.drawTexture(box_t, boxSize * rw, col * boxSize, rl.Color.white),
                 else => undefined,
             }
         }

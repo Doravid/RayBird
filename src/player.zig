@@ -2,10 +2,6 @@ const game = @import("game.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const levelManager = @import("maps\\levelManager.zig");
-pub const pos = struct {
-    x: f32,
-    y: f32,
-};
 const blockType = game.blockType;
 const sol = blockType.sol;
 const air = blockType.air;
@@ -29,14 +25,14 @@ pub var mat16x9 = [9][16]blockType{
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
 };
 //Player history!
-pub var undoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_allocator);
+pub var undoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.page_allocator);
 var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.page_allocator);
 
-pub var redoHistory = std.ArrayList(std.ArrayList(pos)).init(std.heap.page_allocator);
+pub var redoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.page_allocator);
 
 //Player body.
 //0 is always the head, body.items.len is always the floating tail (The square right behind the tail. )
-pub var body = std.ArrayList(pos).init(std.heap.page_allocator);
+pub var body = std.ArrayList(rl.Vector2).init(std.heap.page_allocator);
 
 //Moves the player and adds their previous position to player history. (If the move is valid ofc)
 //Moves the player and adds their previous position to player history. (If the move is valid ofc)
