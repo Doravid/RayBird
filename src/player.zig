@@ -3,8 +3,8 @@ const rl = @import("raylib");
 const std = @import("std");
 const levelManager = @import("maps\\levelManager.zig");
 pub const pos = struct {
-    x: i32,
-    y: i32,
+    x: f32,
+    y: f32,
 };
 const blockType = game.blockType;
 const sol = blockType.sol;
@@ -53,24 +53,24 @@ pub fn updatePos() void {
         redo();
     }
 
-    if ((rl.isKeyPressed(rl.KeyboardKey.w) or (rl.isKeyPressed(rl.KeyboardKey.up))) and (body.items[0].y) - game.boxSize >= 0) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.w) or (rl.isKeyPressed(rl.KeyboardKey.up))) and (body.items[0].y) - @as(f32, @floatFromInt(game.boxSize)) >= 0) {
         std.debug.print("{}", .{body.items[0].y});
-        if (game.posMoveable(body.items[0].x, body.items[0].y - game.boxSize)) {
+        if (game.posMoveable(body.items[0].x, body.items[0].y - @as(f32, @floatFromInt(game.boxSize)))) {
             movePlayer(direction.up);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.a) or (rl.isKeyPressed(rl.KeyboardKey.left))) and body.items[0].x - game.boxSize >= 0) {
-        if (game.posMoveable(body.items[0].x - game.boxSize, body.items[0].y)) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.a) or (rl.isKeyPressed(rl.KeyboardKey.left))) and body.items[0].x - @as(f32, @floatFromInt(game.boxSize)) >= 0) {
+        if (game.posMoveable(body.items[0].x - @as(f32, @floatFromInt(game.boxSize)), body.items[0].y)) {
             movePlayer(direction.left);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.s) or (rl.isKeyPressed(rl.KeyboardKey.down))) and body.items[0].y + game.boxSize <= game.screenHeight - game.boxSize) {
-        if (game.posMoveable(body.items[0].x, body.items[0].y + game.boxSize)) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.s) or (rl.isKeyPressed(rl.KeyboardKey.down))) and body.items[0].y + @as(f32, @floatFromInt(game.boxSize)) <= @as(f32, @floatFromInt(game.screenWidth - game.boxSize))) {
+        if (game.posMoveable(body.items[0].x, body.items[0].y + @as(f32, @floatFromInt(game.boxSize)))) {
             movePlayer(direction.down);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.d) or (rl.isKeyPressed(rl.KeyboardKey.right))) and body.items[0].x + game.boxSize <= game.screenWidth - game.boxSize) {
-        if (game.posMoveable(body.items[0].x + game.boxSize, body.items[0].y)) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.d) or (rl.isKeyPressed(rl.KeyboardKey.right))) and body.items[0].x + @as(f32, @floatFromInt(game.boxSize)) <= @as(f32, @floatFromInt(game.screenWidth - game.boxSize))) {
+        if (game.posMoveable(body.items[0].x + @as(f32, @floatFromInt(game.boxSize)), body.items[0].y)) {
             movePlayer(direction.right);
         }
     }
@@ -139,16 +139,16 @@ fn movePlayer(dir: direction) void {
     }
     switch (dir) {
         direction.right => {
-            body.items[0].x += game.boxSize;
+            body.items[0].x += @as(f32, @floatFromInt(game.boxSize));
         },
         direction.left => {
-            body.items[0].x -= game.boxSize;
+            body.items[0].x -= @as(f32, @floatFromInt(game.boxSize));
         },
         direction.up => {
-            body.items[0].y -= game.boxSize;
+            body.items[0].y -= @as(f32, @floatFromInt(game.boxSize));
         },
         direction.down => {
-            body.items[0].y += game.boxSize;
+            body.items[0].y += @as(f32, @floatFromInt(game.boxSize));
         },
     }
     const newHead = game.getBlockAt(body.items[0].x, body.items[0].y);
@@ -175,7 +175,7 @@ pub fn updateGravity() void {
     var shouldDie = false;
     while (i > 0) {
         i -= 1;
-        const block = game.getBlockAt(body.items[i].x, body.items[i].y + game.boxSize);
+        const block = game.getBlockAt(body.items[i].x, body.items[i].y + @as(f32, @floatFromInt(game.boxSize)));
         if (block == sol or block == frt) {
             canFall = false;
             movementLocked = false;
@@ -198,7 +198,7 @@ pub fn updateGravity() void {
         while (i > 0) {
             i -= 1;
 
-            const block = game.getBlockAt(body.items[i].x, body.items[i].y + game.boxSize);
+            const block = game.getBlockAt(body.items[i].x, body.items[i].y + @as(f32, @floatFromInt(game.boxSize)));
             if (block == blockType.vic) {
                 levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
                 break;
@@ -219,25 +219,16 @@ fn fall() void {
     var i: usize = body.items.len;
     while (i > 0) {
         i -= 1;
-        body.items[i].y += @intFromFloat(1000.0 * rl.getFrameTime());
+        body.items[i].y += 7 * @as(f32, @floatFromInt(game.boxSize)) * rl.getFrameTime();
     }
 }
 
 pub fn drawPlayer(texture: rl.Texture) void {
     for (body.items) |elem| {
-        rl.drawTexture(texture, elem.x, elem.y, rl.Color.white);
-    }
-    for (mat16x9, 0..) |row, rIndex| {
-        for (row, 0..) |element, cIndex| {
-            if (element == blockType.bdy) {
-                const rw: i32 = @intCast(cIndex);
-                const col: i32 = @intCast(rIndex);
-                rl.drawTexture(texture, game.boxSize * rw, col * game.boxSize, rl.Color.white);
-            }
-        }
+        rl.drawTexture(texture, @intFromFloat(elem.x), @intFromFloat(elem.y), rl.Color.white);
     }
 }
-pub fn initPlayer() void {
+pub fn clearPlayer() void {
     body.clearAndFree();
     undoHistory.clearAndFree();
     redoHistory.clearAndFree();

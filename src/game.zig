@@ -86,10 +86,10 @@ pub fn runGame() !void {
         defer rl.endDrawing();
         //Clear and draw background.
         rl.clearBackground(rl.Color.white);
-        rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.sky_blue, Color.orange);
         drawSky(cloud_t);
         if (inMenus) {
             inMenus = levelManager.loadMenu();
+            _ = levelManager.checkPause();
         } else {
             drawMap(plat_t, victory_t, fruit_t, spike_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
@@ -108,9 +108,7 @@ pub fn runGame() !void {
             player.drawPlayer(box_t);
             inMenus = levelManager.checkPause();
         }
-        //rl.drawFPS(0, 0);
         drawWater();
-        rl.drawTriangle(rl.Vector2{ .x = 0, .y = 0 }, rl.Vector2{ .x = 100, .y = 0 }, rl.Vector2{ .x = 50, .y = 100 }, rl.Color.yellow);
     }
 }
 fn drawSky(cloud_t: rl.Texture2D) void {
@@ -126,9 +124,11 @@ fn drawSky(cloud_t: rl.Texture2D) void {
     const xCloud: i32 = @as(i32, @intFromFloat(modTime * 1.4 * @as(f32, @floatFromInt(screenWidth)))) - boxSize * 5;
     const xCloud2: i32 = @as(i32, @intFromFloat(modTime2 * 1.4 * @as(f32, @floatFromInt(screenWidth)))) - boxSize * 5;
     const x = @as(f32, @floatFromInt(screenWidth)) * @abs(std.math.sin(time / 500));
+    //Draw the Sky Background
+    rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.sky_blue, Color.orange);
     //Draw the Sun
-    drawSmoothCircle(x, @floatFromInt(@divTrunc(screenHeight, 3)), 130, 45, rl.Color.init(255, 245, 230, 255));
-    //draw the
+    drawSmoothCircle(x, @floatFromInt(@divTrunc(screenHeight, 3)), 150, 50, rl.Color.init(255, 245, 230, 255));
+    //draw the Clouds
     rl.drawTexture(cloud_t, xCloud, boxSize, rl.Color.init(255, 250, 245, 230));
     rl.drawTexture(cloud_t, screenWidth - xCloud - boxSize * 4, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 2.5), rl.Color.init(255, 250, 245, 230));
     rl.drawTexture(cloud_t, xCloud2, boxSize * 2, rl.Color.init(255, 250, 245, 230));
@@ -188,7 +188,7 @@ fn fullScreen() void {
 }
 
 //Cehcks if a given position is a valid location for the player to move.
-pub fn posMoveable(x: i32, y: i32) bool {
+pub fn posMoveable(x: f32, y: f32) bool {
     const blk = getBlockAt(x, y);
     if (blk == air or blk == frt or blk == vic or blk == spk) {
         return true;
@@ -196,22 +196,22 @@ pub fn posMoveable(x: i32, y: i32) bool {
     return false;
 }
 //Returns the block at a given x,y coordinate (in pixel coordinates)
-pub fn getBlockAt(x: i32, y: i32) blockType {
-    const new_x = @divTrunc(x, boxSize);
-    const new_y = @divTrunc(y, boxSize);
+pub fn getBlockAt(x: f32, y: f32) blockType {
+    const new_x = x / @as(f32, @floatFromInt(boxSize));
+    const new_y = y / @as(f32, @floatFromInt(boxSize));
     if (new_x >= 16 or new_y >= 9 or new_x < 0 or new_y < 0) {
         std.debug.print("{}, {} is out of bounds\n", .{ x, y });
         return blockType.null;
     }
-    return player.mat16x9[@intCast(new_y)][@intCast(new_x)];
+    return player.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)];
 }
 //Uses screen coords (not box Coords, which are different and used by the mat16x9 array)
-pub fn setBlockAt(x: i32, y: i32, block: blockType) void {
-    const new_x = @divTrunc(x, boxSize);
-    const new_y = @divTrunc(y, boxSize);
+pub fn setBlockAt(x: f32, y: f32, block: blockType) void {
+    const new_x = x / @as(f32, @floatFromInt(boxSize));
+    const new_y = y / @as(f32, @floatFromInt(boxSize));
     if (new_x >= 16 or new_y >= 9 or new_x < 0 or new_y < 0) {
         std.debug.print("Out of bounds\n", .{});
         return;
     }
-    player.mat16x9[@intCast(new_y)][@intCast(new_x)] = block;
+    player.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)] = block;
 }

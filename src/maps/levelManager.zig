@@ -52,7 +52,7 @@ var maxLevelUnlocked: usize = 0;
 
 var currentLevelNumber: usize = 0;
 pub fn setLevel(levelNumber: u32) void {
-    player.initPlayer();
+    player.clearPlayer();
     const levelA = loadLevelFromJson(levelNumber);
     currentLevelNumber = levelNumber;
     if (levelNumber > maxLevelUnlocked) {
@@ -86,14 +86,10 @@ pub var currentMenu: menuType = menuType.main;
 const levelSelectRowSize: i32 = 6;
 pub fn loadMenu() bool {
     if (currentMenu == menuType.main) {
-        const startGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 80 }, "Start Game!");
-        const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 320 }, "Level Select");
-        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 560 }, "Quit");
-        const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 800 }, "Level Editor");
+        const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 1.5 * @as(f32, @floatFromInt(game.boxSize)) }, "Level Select");
+        const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 3.5 * @as(f32, @floatFromInt(game.boxSize)) }, "Level Editor");
+        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 5.5 * @as(f32, @floatFromInt(game.boxSize)) }, "Quit");
 
-        if (startGame_button == 1) {
-            return false;
-        }
         if (levelSelect_button == 1) {
             currentMenu = menuType.levelSelect;
         }
