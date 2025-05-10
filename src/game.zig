@@ -22,7 +22,7 @@ const KeyboardKey = rl.KeyboardKey;
 pub var screenWidth: i32 = windowedWidth;
 pub var screenHeight: i32 = windowedHeight;
 
-pub var boxSize: i32 = 120;
+pub var boxSize: i32 = windowedWidth / 16;
 pub fn runGame() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
