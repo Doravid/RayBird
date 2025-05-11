@@ -36,7 +36,7 @@ var userInput: [64:0]u8 = undefined;
 var view: bool = true;
 
 pub fn loadLevelEditor() void {
-    const text_box = rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 80 };
+    const text_box = rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth())) / 2.0) - 240.0, .y = 80 };
     if (!waitingOnInput and (rl.isKeyDown(rl.KeyboardKey.left_control) and rl.isKeyDown(rl.KeyboardKey.s))) {
         waitingOnInput = true;
     }
@@ -47,9 +47,9 @@ pub fn loadLevelEditor() void {
         if (currentBlock != bdy) game.setBlockAt(pos.x, pos.y, currentBlock);
 
         if (currentBlock == bdy and replacedBlock != bdy) {
-            const x: f32 = @as(f32, @floatFromInt(@divTrunc(@as(i32, @intFromFloat((pos.x))), game.boxSize))) * @as(f32, @floatFromInt(game.boxSize));
-            const y: f32 = @as(f32, @floatFromInt(@divTrunc(@as(i32, @intFromFloat((pos.y))), game.boxSize))) * @as(f32, @floatFromInt(game.boxSize));
-            if (body.items.len == 0 or (@abs(x - body.items[0].x) == @as(f32, @floatFromInt(game.boxSize)) and @abs(y - body.items[0].y) == 0) or (@abs(y - body.items[0].y) == @as(f32, @floatFromInt(game.boxSize)) and @abs(x - body.items[0].x) == 0)) {
+            const x: f32 = @as(f32, @floatFromInt(@divTrunc(@as(i32, @intFromFloat((pos.x))), game.boxSize))) * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16;
+            const y: f32 = @as(f32, @floatFromInt(@divTrunc(@as(i32, @intFromFloat((pos.y))), game.boxSize))) * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16;
+            if (body.items.len == 0 or (@abs(x - body.items[0].x) == @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 and @abs(y - body.items[0].y) == 0) or (@abs(y - body.items[0].y) == @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 and @abs(x - body.items[0].x) == 0)) {
                 body.insert(0, rl.Vector2{ .x = x, .y = y }) catch |err| {
                     std.debug.print("Failed to append position: {}\n", .{err});
                     return;

@@ -1,12 +1,10 @@
 // raylib-zig (c) Nikolas Wipper 2023 :D
 const rl = @import("raylib");
 const std = @import("std");
+const gui = @import("raygui");
 const player = @import("player.zig");
 const levelManager = @import("maps\\levelManager.zig");
 const levelEditor = @import("maps\\levelEditor.zig");
-
-const windowedWidth = 1920;
-const windowedHeight = 1080;
 
 pub const blockType = enum(i32) { sol = 0, bdy = 1, frt = 2, vic = 3, air = 4, spk = 5, null = -1 };
 const sol = blockType.sol;
@@ -19,24 +17,14 @@ const vic = blockType.vic;
 const Color = rl.Color;
 const KeyboardKey = rl.KeyboardKey;
 
-pub var screenWidth: i32 = windowedWidth;
-pub var screenHeight: i32 = windowedHeight;
+pub const screenWidth = 1920;
+pub const screenHeight = 1080;
 
-pub var boxSize: i32 = windowedWidth / 16;
+pub var boxSize: i32 = screenWidth / 16;
 pub fn runGame() !void {
-    // Initialization
-    //--------------------------------------------------------------------------------------
-    defer player.undoHistory.deinit();
-    defer player.redoHistory.deinit();
-    //To set config flags
-    const myFlag = rl.ConfigFlags{
-        .msaa_4x_hint = true,
-    };
+    rl.initWindow(1920, 1080, "RayBird");
 
-    rl.setConfigFlags(myFlag);
-
-    rl.initWindow(screenWidth, screenHeight, "RayBird");
-    rl.setTargetFPS(240);
+    rl.setTargetFPS(360);
     rl.setExitKey(rl.KeyboardKey.delete);
 
     var box = rl.loadImage("resources\\box.png");
@@ -77,6 +65,11 @@ pub fn runGame() !void {
     //--------------------------------------------------------------------------------------
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or DEL key
+
+        if (rl.getKeyPressed() == rl.KeyboardKey.h) {
+            rl.setWindowSize(2560, 1440);
+            boxSize = @divExact(rl.getScreenWidth(), 16);
+        }
         // Update
         player.updateGravity();
         player.updatePos();
@@ -173,6 +166,7 @@ fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike
         }
     }
 }
+fn drawTexture(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color) void {}
 fn drawWater() void {
     const time: f32 = @floatCast(rl.getTime() * 1.35);
     rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time + 0.3) * 30 - 40), 70, Color.blue);

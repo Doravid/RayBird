@@ -59,7 +59,7 @@ pub fn setLevel(levelNumber: u32) void {
         maxLevelUnlocked = levelNumber - 1;
     }
     for (levelA.player) |elem| {
-        const newBody = rl.Vector2{ .x = @as(f32, @floatFromInt(game.boxSize)) * (elem.x / 120), .y = @as(f32, @floatFromInt(game.boxSize)) * (elem.y / 120) };
+        const newBody = rl.Vector2{ .x = @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 * (elem.x / 120), .y = @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 * (elem.y / 120) };
         player.body.append(newBody) catch |err| {
             std.debug.print("Failed to append position: {}\n", .{err});
             return;
@@ -87,9 +87,9 @@ pub var currentMenu: menuType = menuType.main;
 const levelSelectRowSize: i32 = 6;
 pub fn loadMenu() bool {
     if (currentMenu == menuType.main) {
-        const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 1.5 * @as(f32, @floatFromInt(game.boxSize)) }, "Level Select");
-        const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 3.5 * @as(f32, @floatFromInt(game.boxSize)) }, "Level Editor");
-        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(game.boxSize)), .width = 4.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth)) / 2.0) - 240.0, .y = 5.5 * @as(f32, @floatFromInt(game.boxSize)) }, "Quit");
+        const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth())) / 2.0) - 240.0, .y = 1.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Level Select");
+        const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth())) / 2.0) - 240.0, .y = 3.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Level Editor");
+        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth())) / 2.0) - 240.0, .y = 5.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Quit");
 
         if (levelSelect_button == 1) {
             currentMenu = menuType.levelSelect;
@@ -114,7 +114,7 @@ pub fn loadMenu() bool {
                 return true;
             };
             const curLevel = numAsString.ptr;
-            const levelButton = gui.guiButton(rl.Rectangle{ .height = 2.0 * @as(f32, @floatFromInt(game.boxSize)), .width = 2.0 * @as(f32, @floatFromInt(game.boxSize)), .x = (@as(f32, @floatFromInt(game.screenWidth * (@mod(i, levelSelectRowSize)))) / 6.0) + 60, .y = @as(f32, @floatFromInt(@divTrunc(game.boxSize, 6) + game.boxSize * @divTrunc(i, 6))) * 2.5 }, curLevel);
+            const levelButton = gui.guiButton(rl.Rectangle{ .height = 2.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 2.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() * (@mod(i, levelSelectRowSize)))) / 6.0) + 60, .y = @as(f32, @floatFromInt(@divTrunc(rl.getScreenWidth(), 6 * 16) + game.boxSize * @divTrunc(i, 6))) * 2.5 }, curLevel);
             if (levelButton == 1) {
                 setLevel(@intCast(i + 1));
                 return false;
