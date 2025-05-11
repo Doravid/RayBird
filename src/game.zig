@@ -27,21 +27,21 @@ pub fn runGame() !void {
     rl.setTargetFPS(360);
     rl.setExitKey(rl.KeyboardKey.delete);
 
-    var box = rl.loadImage("resources\\box.png");
-    var plat = rl.loadImage("resources\\dirt.png");
-    var fruit = rl.loadImage("resources\\fruit.png");
-    var victory = rl.loadImage("resources\\victory.png");
-    var del = rl.loadImage("resources\\delete.png");
-    var spike = rl.loadImage("resources\\spike.png");
+    const box = rl.loadImage("resources\\box.png");
+    const plat = rl.loadImage("resources\\dirt.png");
+    const fruit = rl.loadImage("resources\\fruit.png");
+    const victory = rl.loadImage("resources\\victory.png");
+    const del = rl.loadImage("resources\\delete.png");
+    const spike = rl.loadImage("resources\\spike.png");
 
     var cloud = rl.loadImage("resources\\cloud1.png");
 
-    rl.imageResize(&box, boxSize, boxSize);
-    rl.imageResizeNN(&plat, boxSize, boxSize);
-    rl.imageResize(&fruit, boxSize, boxSize);
-    rl.imageResize(&victory, boxSize, boxSize);
-    rl.imageResize(&del, boxSize, boxSize);
-    rl.imageResize(&spike, boxSize, boxSize);
+    // rl.imageResize(&box, boxSize, boxSize);
+    // rl.imageResizeNN(&plat, boxSize, boxSize);
+    // rl.imageResize(&fruit, boxSize, boxSize);
+    // rl.imageResize(&victory, boxSize, boxSize);
+    // rl.imageResize(&del, boxSize, boxSize);
+    // rl.imageResize(&spike, boxSize, boxSize);
     rl.imageResize(&cloud, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 5), boxSize * 3);
 
     const box_t = rl.loadTextureFromImage(box);
@@ -67,7 +67,11 @@ pub fn runGame() !void {
     while (!rl.windowShouldClose()) { // Detect window close button or DEL key
 
         if (rl.getKeyPressed() == rl.KeyboardKey.h) {
-            rl.setWindowSize(2560, 1440);
+            if (rl.getScreenHeight() == 1080) {
+                rl.setWindowSize(2560, 1440);
+            } else {
+                rl.setWindowSize(1920, 1080);
+            }
             boxSize = @divExact(rl.getScreenWidth(), 16);
         }
         // Update
