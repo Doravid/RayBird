@@ -221,7 +221,7 @@ fn fall() void {
 
 pub fn drawPlayer(texture: rl.Texture) void {
     for (body.items) |elem| {
-        rl.drawTexture(texture, @intFromFloat(elem.x), @intFromFloat(elem.y), rl.Color.white);
+        game.drawTexture(texture, @intFromFloat(elem.x), @intFromFloat(elem.y), rl.Color.white);
     }
 }
 pub fn clearPlayer() void {

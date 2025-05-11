@@ -95,8 +95,8 @@ pub fn runGame() !void {
                     spk => spike_t,
                     else => undefined,
                 };
-                rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(screenWidth - 80)), .y = 20, .height = 60, .width = 60 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
-                rl.drawText("Current Block", screenWidth - 100, 85, 14, Color.black);
+                rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(rl.getScreenWidth() - 80)), .y = 20, .height = 60, .width = 60 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
+                rl.drawText("Current Block", rl.getScreenWidth() - boxSize, 85, 14, Color.black);
             }
             player.drawPlayer(box_t);
             inMenus = levelManager.checkPause();
@@ -114,16 +114,16 @@ fn drawSky(cloud_t: rl.Texture2D) void {
         std.debug.print("{}", .{err});
         return;
     };
-    const xCloud: i32 = @as(i32, @intFromFloat(modTime * 1.4 * @as(f32, @floatFromInt(screenWidth)))) - boxSize * 5;
-    const xCloud2: i32 = @as(i32, @intFromFloat(modTime2 * 1.4 * @as(f32, @floatFromInt(screenWidth)))) - boxSize * 5;
-    const x = @as(f32, @floatFromInt(screenWidth)) * @abs(std.math.sin(time / 500));
+    const xCloud: i32 = @as(i32, @intFromFloat(modTime * 1.4 * @as(f32, @floatFromInt(rl.getScreenWidth())))) - boxSize * 5;
+    const xCloud2: i32 = @as(i32, @intFromFloat(modTime2 * 1.4 * @as(f32, @floatFromInt(rl.getScreenWidth())))) - boxSize * 5;
+    const x = @as(f32, @floatFromInt(rl.getScreenWidth())) * @abs(std.math.sin(time / 500));
     //Draw the Sky Background
-    rl.drawRectangleGradientV(0, 0, screenWidth, screenHeight, Color.sky_blue, Color.orange);
+    rl.drawRectangleGradientV(0, 0, rl.getScreenWidth(), rl.getScreenHeight(), Color.sky_blue, Color.orange);
     //Draw the Sun
-    drawSmoothCircle(x, @floatFromInt(@divTrunc(screenHeight, 3)), 150, 50, rl.Color.init(255, 245, 230, 255));
+    drawSmoothCircle(x, @floatFromInt(@divTrunc(rl.getScreenHeight(), 3)), 150, 50, rl.Color.init(255, 245, 230, 255));
     //draw the Clouds
     rl.drawTexture(cloud_t, xCloud, boxSize, rl.Color.init(255, 250, 245, 230));
-    rl.drawTexture(cloud_t, screenWidth - xCloud - boxSize * 4, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 2.5), rl.Color.init(255, 250, 245, 230));
+    rl.drawTexture(cloud_t, rl.getScreenWidth() - xCloud - boxSize * 4, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 2.5), rl.Color.init(255, 250, 245, 230));
     rl.drawTexture(cloud_t, xCloud2, boxSize * 2, rl.Color.init(255, 250, 245, 230));
 }
 pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Color) void {
@@ -156,24 +156,31 @@ fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike
             const rw: i32 = @intCast(cIndex);
             const col: i32 = @intCast(rIndex);
             switch (element) {
-                sol => rl.drawTexture(plat_t, boxSize * rw, col * boxSize, rl.Color.white),
-                vic => rl.drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
-                frt => rl.drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white),
-                spk => rl.drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
-                bdy => rl.drawTexture(box_t, boxSize * rw, col * boxSize, rl.Color.white),
+                sol => drawTexture(plat_t, boxSize * rw, col * boxSize, rl.Color.white),
+                vic => drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
+                frt => drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white),
+                spk => drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
+                bdy => drawTexture(box_t, boxSize * rw, col * boxSize, rl.Color.white),
                 else => undefined,
             }
         }
     }
 }
-fn drawTexture(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color) void {}
+pub fn drawTexture(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color) void {
+    const source = rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(texture.width), .height = @floatFromInt(texture.height) };
+    const dest = rl.Rectangle{ .x = @floatFromInt(posX), .y = @floatFromInt(posY), .width = @floatFromInt(boxSize), .height = @floatFromInt(boxSize) };
+    const origin = rl.Vector2{ .x = 0, .y = 0 };
+    const rotation = 0.0;
+    rl.drawTexturePro(texture, source, dest, origin, rotation, tint);
+}
 fn drawWater() void {
     const time: f32 = @floatCast(rl.getTime() * 1.35);
-    rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time + 0.3) * 30 - 40), 70, Color.blue);
-    rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time) * 20), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time) * 20), 100, Color.dark_blue);
 
-    rl.drawLineBezier(rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time + 0.3) * 30 - 40), 70, Color.blue);
-    rl.drawLineBezier(rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)) / 2, @as(f32, @floatFromInt(screenHeight)) - std.math.sin(time) * 20), rl.Vector2.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)) - std.math.cos(time) * 20), 100, Color.dark_blue);
+    rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.cos(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())) / 2, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.sin(time + 0.3) * 30 - 40), 70, Color.blue);
+    rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.cos(time) * 20), rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())) / 2, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.sin(time) * 20), 100, Color.dark_blue);
+
+    rl.drawLineBezier(rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())) / 2, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.sin(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())), @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.cos(time + 0.3) * 30 - 40), 70, Color.blue);
+    rl.drawLineBezier(rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())) / 2, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.sin(time) * 20), rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())), @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.cos(time) * 20), 100, Color.dark_blue);
 }
 fn fullScreen() void {
     if (rl.isKeyPressed(rl.KeyboardKey.f11)) {
