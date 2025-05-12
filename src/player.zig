@@ -60,12 +60,12 @@ pub fn updatePos() void {
             movePlayer(direction.left);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.s) or (rl.isKeyPressed(rl.KeyboardKey.down))) and body.items[0].y + @as(f32, @floatFromInt(game.boxSize)) <= @as(f32, @floatFromInt(game.screenWidth - game.boxSize))) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.s) or (rl.isKeyPressed(rl.KeyboardKey.down))) and body.items[0].y + @as(f32, @floatFromInt(game.boxSize)) <= @as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize))) {
         if (game.posMoveable(body.items[0].x, body.items[0].y + @as(f32, @floatFromInt(game.boxSize)))) {
             movePlayer(direction.down);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.d) or (rl.isKeyPressed(rl.KeyboardKey.right))) and body.items[0].x + @as(f32, @floatFromInt(game.boxSize)) <= @as(f32, @floatFromInt(game.screenWidth - game.boxSize))) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.d) or (rl.isKeyPressed(rl.KeyboardKey.right))) and body.items[0].x + @as(f32, @floatFromInt(game.boxSize)) <= @as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize))) {
         if (game.posMoveable(body.items[0].x + @as(f32, @floatFromInt(game.boxSize)), body.items[0].y)) {
             movePlayer(direction.right);
         }

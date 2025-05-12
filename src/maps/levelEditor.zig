@@ -66,7 +66,7 @@ pub fn loadLevelEditor() void {
         var i: usize = 0;
         if (res == 1) {
             waitingOnInput = false;
-            writeLevelToFile(levelManager.level.init(player.mat16x9, body.items), userInput);
+            writeLevelToFile(levelManager.level{ .map = player.mat16x9, .player = body.items }, userInput);
             while (i < 64) {
                 userInput[i] = 0;
                 i += 1;

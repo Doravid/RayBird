@@ -25,24 +25,24 @@ pub fn loadLevelFromJson(name: u32) level {
 
     const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
         std.debug.print("Failed to Merge the int and the string: {}", .{err});
-        return level.init(player.mat16x9, &[_]rl.Vector2{});
+        return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
     };
     const path = alloc.alloc(u8, newPrefix.len + suffix.len) catch |err| {
         std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
-        return level.init(player.mat16x9, &[_]rl.Vector2{});
+        return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
     };
     std.mem.copyForwards(u8, path[0..], newPrefix);
     std.mem.copyForwards(u8, path[newPrefix.len..], suffix);
     const jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
         std.debug.print("Failed to read the file: {}", .{err});
-        return level.init(player.mat16x9, &[_]rl.Vector2{});
+        return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
     };
 
     const result = std.json.parseFromSlice(level, alloc, jsonData, .{
         .ignore_unknown_fields = true,
     }) catch |err| {
         std.debug.print("Failed to parse json: {}", .{err});
-        return level.init(player.mat16x9, &[_]rl.Vector2{});
+        return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
     };
 
     return result.value;
@@ -85,12 +85,18 @@ pub fn checkPause() bool {
 pub const menuType = enum { main, levelSelect, pauseMenu, levelEditor, optionsMenu };
 pub var currentMenu: menuType = menuType.main;
 const levelSelectRowSize: i32 = 6;
+
+const numResolutions = 4;
+var curRes: usize = 1;
+const resolutions: [numResolutions][*:0]const u8 = [numResolutions][*:0]const u8{ "1280 x 720", "1920 x 1080", "2560x1440", "4096 x 2160" };
+const resolutionVecs = [_]rl.Vector2{ rl.Vector2{ .x = 1280, .y = 720 }, rl.Vector2{ .x = 1920, .y = 1080 }, rl.Vector2{ .x = 2560, .y = 1440 }, rl.Vector2{ .x = 4096, .y = 2160 } };
+
 pub fn loadMenu() bool {
     if (currentMenu == menuType.main) {
         const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 1.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Level Select");
-        const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 3.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Level Editor");
-        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 5.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Quit");
-        const options_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 5.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Options");
+        const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 3 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Level Editor");
+        const options_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 4.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Options");
+        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 6 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Quit");
 
         if (levelSelect_button == 1) {
             currentMenu = menuType.levelSelect;
@@ -107,6 +113,25 @@ pub fn loadMenu() bool {
         if (quitGame_button == 1) {
             rl.closeWindow();
         }
+    }
+    if (currentMenu == menuType.optionsMenu) {
+        const width: f32 = @floatFromInt(game.boxSize * 4);
+        const height: f32 = @floatFromInt(game.boxSize);
+        const center: f32 = @floatFromInt(@divTrunc(rl.getScreenWidth(), 2));
+        gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 48));
+
+        _ = gui.guiButton(rl.Rectangle{ .height = height, .width = width, .x = center - width / 2, .y = height * 6 }, resolutions[curRes]);
+        const leftButton = gui.guiButton(rl.Rectangle{ .height = height / 2, .width = height / 2, .x = center - (width + height * 2) / 2, .y = height * 6 + height / 4 }, "<");
+        const rightButton = gui.guiButton(rl.Rectangle{ .height = height / 2, .width = height / 2, .x = center + (width + height) / 2, .y = height * 6 + height / 4 }, ">");
+        if (leftButton == 1 and curRes != 0) {
+            curRes -= 1;
+            game.setWindowSizeFromVector(resolutionVecs[curRes]);
+        }
+        if (rightButton == 1 and curRes != numResolutions - 1) {
+            curRes += 1;
+            game.setWindowSizeFromVector(resolutionVecs[curRes]);
+        }
+        gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 64));
     }
     if (currentMenu == menuType.levelSelect) {
         var i: i32 = 0;

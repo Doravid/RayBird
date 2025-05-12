@@ -17,32 +17,15 @@ const vic = blockType.vic;
 const Color = rl.Color;
 const KeyboardKey = rl.KeyboardKey;
 
-pub const screenWidth = 1920;
-pub const screenHeight = 1080;
-
-pub var boxSize: i32 = screenWidth / 16;
+pub var boxSize: i32 = 1920 / 16;
 pub fn runGame() !void {
-    rl.initWindow(1920, 1080, "RayBird");
-
-    rl.setTargetFPS(360);
-    rl.setExitKey(rl.KeyboardKey.delete);
-
     const box = rl.loadImage("resources\\box.png");
     const plat = rl.loadImage("resources\\dirt.png");
     const fruit = rl.loadImage("resources\\fruit.png");
     const victory = rl.loadImage("resources\\victory.png");
     const del = rl.loadImage("resources\\delete.png");
     const spike = rl.loadImage("resources\\spike.png");
-
-    var cloud = rl.loadImage("resources\\cloud1.png");
-
-    // rl.imageResize(&box, boxSize, boxSize);
-    // rl.imageResizeNN(&plat, boxSize, boxSize);
-    // rl.imageResize(&fruit, boxSize, boxSize);
-    // rl.imageResize(&victory, boxSize, boxSize);
-    // rl.imageResize(&del, boxSize, boxSize);
-    // rl.imageResize(&spike, boxSize, boxSize);
-    rl.imageResize(&cloud, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 5), boxSize * 3);
+    const cloud = rl.loadImage("resources\\cloud1.png");
 
     const box_t = rl.loadTextureFromImage(box);
     const plat_t = rl.loadTextureFromImage(plat);
@@ -84,6 +67,7 @@ pub fn runGame() !void {
         //Clear and draw background.
         rl.clearBackground(rl.Color.white);
         drawSky(cloud_t);
+        rl.endShaderMode();
         if (inMenus) {
             inMenus = levelManager.loadMenu();
             _ = levelManager.checkPause();
@@ -99,8 +83,8 @@ pub fn runGame() !void {
                     spk => spike_t,
                     else => undefined,
                 };
-                rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(rl.getScreenWidth() - 80)), .y = 20, .height = 60, .width = 60 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
-                rl.drawText("Current Block", rl.getScreenWidth() - boxSize, 85, 14, Color.black);
+                rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(rl.getScreenWidth() - @divTrunc(boxSize, 4) * 3)), .y = @as(f32, @floatFromInt(boxSize)) / 4, .height = @as(f32, @floatFromInt(boxSize)) / 2, .width = @as(f32, @floatFromInt(boxSize)) / 2 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
+                rl.drawText("Current Block", rl.getScreenWidth() - boxSize, @divTrunc(boxSize, 7) * 6, @divTrunc(boxSize, 8), Color.black);
             }
             player.drawPlayer(box_t);
             inMenus = levelManager.checkPause();
@@ -119,16 +103,16 @@ fn drawSky(cloud_t: rl.Texture2D) void {
         return;
     };
     const xCloud: i32 = @as(i32, @intFromFloat(modTime * 1.4 * @as(f32, @floatFromInt(rl.getScreenWidth())))) - boxSize * 5;
-    const xCloud2: i32 = @as(i32, @intFromFloat(modTime2 * 1.4 * @as(f32, @floatFromInt(rl.getScreenWidth())))) - boxSize * 5;
+    const xCloud2: i32 = @as(i32, @intFromFloat(modTime2 * 1.3 * @as(f32, @floatFromInt(rl.getScreenWidth())))) - boxSize * 5;
     const x = @as(f32, @floatFromInt(rl.getScreenWidth())) * @abs(std.math.sin(time / 500));
     //Draw the Sky Background
     rl.drawRectangleGradientV(0, 0, rl.getScreenWidth(), rl.getScreenHeight(), Color.sky_blue, Color.orange);
     //Draw the Sun
     drawSmoothCircle(x, @floatFromInt(@divTrunc(rl.getScreenHeight(), 3)), 150, 50, rl.Color.init(255, 245, 230, 255));
     //draw the Clouds
-    rl.drawTexture(cloud_t, xCloud, boxSize, rl.Color.init(255, 250, 245, 230));
+    drawTextureNew(cloud_t, xCloud, boxSize, rl.Color.init(255, 250, 245, 230), 0.5);
     rl.drawTexture(cloud_t, rl.getScreenWidth() - xCloud - boxSize * 4, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 2.5), rl.Color.init(255, 250, 245, 230));
-    rl.drawTexture(cloud_t, xCloud2, boxSize * 2, rl.Color.init(255, 250, 245, 230));
+    drawTextureNew(cloud_t, xCloud2, boxSize * 2, rl.Color.init(255, 250, 245, 230), 0.8);
 }
 pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Color) void {
     const angleStep = 2.0 * std.math.pi / @as(f32, @floatFromInt(segments));
@@ -177,6 +161,14 @@ pub fn drawTexture(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color) vo
     const rotation = 0.0;
     rl.drawTexturePro(texture, source, dest, origin, rotation, tint);
 }
+pub fn drawTextureNew(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color, scaling: f32) void {
+    const source = rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(texture.width), .height = @floatFromInt(texture.height) };
+    const dest = rl.Rectangle{ .x = @floatFromInt(posX), .y = @floatFromInt(posY), .width = @as(f32, @floatFromInt(texture.width)) * (scaling), .height = @as(f32, @floatFromInt(texture.height)) * scaling };
+    const origin = rl.Vector2{ .x = 0, .y = 0 };
+    const rotation = 0.0;
+    rl.drawTexturePro(texture, source, dest, origin, rotation, tint);
+}
+
 fn drawWater() void {
     const time: f32 = @floatCast(rl.getTime() * 1.35);
 
@@ -220,4 +212,9 @@ pub fn setBlockAt(x: f32, y: f32, block: blockType) void {
         return;
     }
     player.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)] = block;
+}
+pub fn setWindowSizeFromVector(ScreenSize: rl.Vector2) void {
+    rl.setWindowSize(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
+    boxSize = @divExact(rl.getScreenWidth(), 16);
+    gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 64));
 }
