@@ -24,6 +24,7 @@ pub var mat16x9 = [9][16]blockType{
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
 };
+
 //Player history!
 pub var undoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.page_allocator);
 var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.page_allocator);
@@ -114,7 +115,8 @@ fn redo() void {
 }
 fn movePlayer(dir: direction) void {
     redoHistory.clearAndFree();
-
+    const sound = rl.getRandomValue(0, 1);
+    rl.playSound(game.sounds.items[@intCast(sound)]);
     const clone = body.clone() catch |err| {
         std.debug.print("Failed to append position: {}\n", .{err});
         return;

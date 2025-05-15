@@ -13,12 +13,16 @@ const spk = blockType.spk;
 const bdy = blockType.bdy;
 const frt = blockType.frt;
 const vic = blockType.vic;
-
 const Color = rl.Color;
 const KeyboardKey = rl.KeyboardKey;
 
+pub var sounds = std.ArrayList(rl.Sound).init(std.heap.page_allocator);
+
 pub var boxSize: i32 = 1920 / 16;
 pub fn runGame() !void {
+    try sounds.append(rl.loadSound("resources/audio/move.mp3"));
+    try sounds.append(rl.loadSound("resources/audio/move2.mp3"));
+
     const box = rl.loadImage("resources\\box.png");
     const plat = rl.loadImage("resources\\dirt.png");
     const fruit = rl.loadImage("resources\\fruit.png");
@@ -48,15 +52,6 @@ pub fn runGame() !void {
     //--------------------------------------------------------------------------------------
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or DEL key
-
-        if (rl.getKeyPressed() == rl.KeyboardKey.h) {
-            if (rl.getScreenHeight() == 1080) {
-                rl.setWindowSize(2560, 1440);
-            } else {
-                rl.setWindowSize(1920, 1080);
-            }
-            boxSize = @divExact(rl.getScreenWidth(), 16);
-        }
         // Update
         player.updateGravity();
         player.updatePos();
@@ -198,7 +193,7 @@ pub fn getBlockAt(x: f32, y: f32) blockType {
     const new_x = x / @as(f32, @floatFromInt(boxSize));
     const new_y = y / @as(f32, @floatFromInt(boxSize));
     if (new_x >= 16 or new_y >= 9 or new_x < 0 or new_y < 0) {
-        std.debug.print("{}, {} is out of bounds\n", .{ x, y });
+        std.debug.print("{}, {} is out of bounds\n", .{ @as(i32, @intFromFloat(x)), @as(i32, @intFromFloat(y)) });
         return blockType.null;
     }
     return player.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)];
