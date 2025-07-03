@@ -25,6 +25,8 @@ pub fn runGame() !void {
 
     const box = rl.loadImage("resources/box.png");
     const plat = rl.loadImage("resources/dirt.png");
+    const plat2 = rl.loadImage("resources/dirt2.png");
+    const grass = rl.loadImage("resources/grass.png");
     const fruit = rl.loadImage("resources/fruit.png");
     const victory = rl.loadImage("resources/victory.png");
     const del = rl.loadImage("resources/delete.png");
@@ -33,6 +35,8 @@ pub fn runGame() !void {
 
     const box_t = rl.loadTextureFromImage(box);
     const plat_t = rl.loadTextureFromImage(plat);
+    const plat2_t = rl.loadTextureFromImage(plat2);
+    const grass_t = rl.loadTextureFromImage(grass);
     const fruit_t = rl.loadTextureFromImage(fruit);
     const victory_t = rl.loadTextureFromImage(victory);
     const del_t = rl.loadTextureFromImage(del);
@@ -41,11 +45,13 @@ pub fn runGame() !void {
 
     defer rl.unloadImage(box);
     defer rl.unloadImage(plat);
+    defer rl.unloadImage(plat2);
     defer rl.unloadImage(fruit);
     defer rl.unloadImage(victory);
     defer rl.unloadImage(del);
     defer rl.unloadImage(spike);
     defer rl.unloadImage(cloud);
+    defer rl.unloadImage(grass);
 
     defer rl.closeWindow(); // Close window and OpenGL context
     var inMenus: bool = true;
@@ -67,7 +73,7 @@ pub fn runGame() !void {
             inMenus = levelManager.loadMenu();
             _ = levelManager.checkPause();
         } else {
-            drawMap(plat_t, victory_t, fruit_t, spike_t, box_t);
+            drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, box_t, grass_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
                     sol => plat_t,
@@ -133,13 +139,13 @@ pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Co
     }
 }
 //Draws all of the boxes in the map each frame.
-fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, box_t: rl.Texture) void {
+fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, box_t: rl.Texture, grass_t: rl.Texture) void {
     for (player.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             const rw: i32 = @intCast(cIndex);
             const col: i32 = @intCast(rIndex);
             switch (element) {
-                sol => drawTexture(plat_t, boxSize * rw, col * boxSize, rl.Color.white),
+                sol => drawDirt(grass_t, plat_t, plat2_t, boxSize * rw, col * boxSize, rl.Color.white),
                 vic => drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
                 frt => drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white),
                 spk => drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
@@ -147,6 +153,15 @@ fn drawMap(plat_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike
                 else => undefined,
             }
         }
+    }
+}
+fn drawDirt(grass_t: rl.Texture, plat_t: rl.Texture, plat2_t: rl.Texture, posX: i32, posY: i32, color: rl.Color) void {
+    if (getBlockAt(@floatFromInt(posX), @floatFromInt(posY - boxSize)) != sol) {
+        drawTexture(grass_t, posX, posY, color);
+    } else if (@mod(posX, boxSize * 3) == 0 or @mod(posY, boxSize * 4) == 0) {
+        drawTexture(plat_t, posX, posY, color);
+    } else {
+        drawTexture(plat2_t, posX, posY, color);
     }
 }
 pub fn drawTexture(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color) void {
