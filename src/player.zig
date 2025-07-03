@@ -1,7 +1,7 @@
 const game = @import("game.zig");
 const rl = @import("raylib");
 const std = @import("std");
-const levelManager = @import("maps\\levelManager.zig");
+const levelManager = @import("maps/levelManager.zig");
 const blockType = game.blockType;
 const sol = blockType.sol;
 const air = blockType.air;
@@ -115,8 +115,8 @@ fn redo() void {
 }
 fn movePlayer(dir: direction) void {
     redoHistory.clearAndFree();
-    const sound = rl.getRandomValue(0, 1);
-    rl.playSound(game.sounds.items[@intCast(sound)]);
+    // const sound = rl.getRandomValue(0, 1);
+    // rl.playSound(game.sounds.items[@intCast(sound)]);
     const clone = body.clone() catch |err| {
         std.debug.print("Failed to append position: {}\n", .{err});
         return;

@@ -3,8 +3,8 @@ const rl = @import("raylib");
 const std = @import("std");
 const gui = @import("raygui");
 const player = @import("player.zig");
-const levelManager = @import("maps\\levelManager.zig");
-const levelEditor = @import("maps\\levelEditor.zig");
+const levelManager = @import("maps/levelManager.zig");
+const levelEditor = @import("maps/levelEditor.zig");
 
 pub const blockType = enum(i32) { sol = 0, bdy = 1, frt = 2, vic = 3, air = 4, spk = 5, null = -1 };
 const sol = blockType.sol;
@@ -16,20 +16,20 @@ const vic = blockType.vic;
 const Color = rl.Color;
 const KeyboardKey = rl.KeyboardKey;
 
-pub var sounds = std.ArrayList(rl.Sound).init(std.heap.page_allocator);
+// pub var sounds = std.ArrayList(rl.Sound).init(std.heap.page_allocator);
 
 pub var boxSize: i32 = 1920 / 16;
 pub fn runGame() !void {
-    try sounds.append(rl.loadSound("resources/audio/move.mp3"));
-    try sounds.append(rl.loadSound("resources/audio/move2.mp3"));
+    // try sounds.append(rl.loadSound("resources/audio/move.mp3"));
+    // try sounds.append(rl.loadSound("resources/audio/move2.mp3"));
 
-    const box = rl.loadImage("resources\\box.png");
-    const plat = rl.loadImage("resources\\dirt.png");
-    const fruit = rl.loadImage("resources\\fruit.png");
-    const victory = rl.loadImage("resources\\victory.png");
-    const del = rl.loadImage("resources\\delete.png");
-    const spike = rl.loadImage("resources\\spike.png");
-    const cloud = rl.loadImage("resources\\cloud1.png");
+    const box = rl.loadImage("resources/box.png");
+    const plat = rl.loadImage("resources/dirt.png");
+    const fruit = rl.loadImage("resources/fruit.png");
+    const victory = rl.loadImage("resources/victory.png");
+    const del = rl.loadImage("resources/delete.png");
+    const spike = rl.loadImage("resources/spike.png");
+    const cloud = rl.loadImage("resources/cloud1.png");
 
     const box_t = rl.loadTextureFromImage(box);
     const plat_t = rl.loadTextureFromImage(plat);

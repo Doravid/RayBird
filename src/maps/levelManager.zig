@@ -1,9 +1,9 @@
 const rl = @import("raylib");
 const gui = @import("raygui");
 
-const game = @import("..\\game.zig");
+const game = @import("../game.zig");
 const std = @import("std");
-const player = @import("..\\player.zig");
+const player = @import("../player.zig");
 const levelEditor = @import("levelEditor.zig");
 pub const level = struct {
     map: [9][16]game.blockType,

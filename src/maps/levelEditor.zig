@@ -1,5 +1,5 @@
-const game = @import("..\\game.zig");
-const player = @import("..\\player.zig");
+const game = @import("../game.zig");
+const player = @import("../player.zig");
 const rl = @import("raylib");
 const gui = @import("raygui");
 const std = @import("std");
