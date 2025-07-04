@@ -5,7 +5,7 @@ const game = @import("../game.zig");
 const std = @import("std");
 const player = @import("../player.zig");
 const levelEditor = @import("levelEditor.zig");
-const builtin = @import("builtin"); // Import builtin module for target info
+const builtin = @import("builtin");
 
 pub const level = struct {
     map: [9][16]game.blockType,
@@ -18,42 +18,50 @@ pub const level = struct {
 
 pub var currentLevelNum = 0;
 
-const level1_json_data = @embedFile("./level1.json");
-const level2_json_data = @embedFile("./level2.json");
-const level3_json_data = @embedFile("./level3.json");
-const level4_json_data = @embedFile("./level4.json");
-const level5_json_data = @embedFile("./level5.json");
+// Embedded level files for WASM
+const embedded_levels = if (builtin.target.os.tag == .emscripten or true) struct {
+    const level1 = @embedFile("./level1.json");
+    const level2 = @embedFile("./level2.json");
+    const level3 = @embedFile("./level3.json");
+    const level4 = @embedFile("./level4.json");
+    const level5 = @embedFile("./level5.json");
 
-const embedded_levels = [_]struct { u32, []const u8 }{
-    .{ 1, level1_json_data },
-    .{ 2, level2_json_data },
-    .{ 3, level3_json_data },
-    .{ 4, level4_json_data },
-    .{ 5, level5_json_data },
+    pub fn getLevelData(level_num: u32) ?[]const u8 {
+        return switch (level_num) {
+            1 => level1,
+            2 => level2,
+            3 => level3,
+            4 => level4,
+            5 => level5,
+            else => null,
+        };
+    }
+} else struct {
+    pub fn getLevelData(level_num: u32) ?[]const u8 {
+        _ = level_num;
+        return null;
+    }
 };
 
 pub fn loadLevelFromJson(name: u32) level {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = gpa.allocator();
+    const alloc = std.heap.c_allocator;
 
     var jsonData: []const u8 = undefined;
+    var should_free_json = false;
 
-    const is_wasm = true; //builtin.target.cpu.arch == .wasm32;
+    const is_wasm = builtin.target.os.tag == .emscripten;
 
-    var found_embedded = false;
-    for (embedded_levels) |item| {
-        if (item[0] == name) {
-            jsonData = item[1];
-            found_embedded = true;
-            break;
+    // First try to get embedded data if we're on WASM
+    if (is_wasm) {
+        if (embedded_levels.getLevelData(name)) |data| {
+            jsonData = data;
+            std.log.info("Loading embedded level {}", .{name});
+        } else {
+            std.debug.print("Error: Level {} not found in embedded data (WASM target)\n", .{name});
+            return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
         }
-    }
-
-    if (found_embedded) {
-        std.log.info("found", .{});
-    } else if (!is_wasm) {
-        // If not found in embedded and NOT compiling for WASM,
-        // attempt to read from the file system.
+    } else {
+        // For non-WASM, read from file system
         const prefix = "./src/maps/level";
         const suffix = ".json";
 
@@ -67,21 +75,20 @@ pub fn loadLevelFromJson(name: u32) level {
             std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
             return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
         };
+        defer alloc.free(path);
+
         std.mem.copyForwards(u8, path[0..], newPrefix);
         std.mem.copyForwards(u8, path[newPrefix.len..], suffix);
-        defer alloc.free(path);
 
         jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
             std.debug.print("Failed to read the file: {}. Ensure it exists and is accessible.\n", .{err});
             return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
         };
-        defer alloc.free(jsonData); // jsonData was allocated by readFileAlloc
-    } else {
-        // If WASM and not found in embedded, this indicates an issue
-        std.debug.print("Error: Level {} not found in embedded data (WASM target), and file system access is unavailable.\n", .{name});
-        return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
+        should_free_json = true;
     }
 
+    defer if (should_free_json) alloc.free(jsonData);
+    std.log.err("JSON data length: {}, first 100 chars: {s}\n", .{ jsonData.len, jsonData[0..@min(100, jsonData.len)] });
     const result = std.json.parseFromSlice(level, alloc, jsonData, .{
         .ignore_unknown_fields = true,
     }) catch |err| {
@@ -111,9 +118,11 @@ pub fn setLevel(levelNumber: u32) void {
     }
     player.mat16x9 = levelA.map;
 }
+
 pub fn getCurrentLevelNum() usize {
     return currentLevelNumber;
 }
+
 pub fn checkPause() bool {
     if (currentMenu == menuType.levelEditor) {
         levelEditor.loadLevelEditor();
