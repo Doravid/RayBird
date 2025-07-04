@@ -5,6 +5,8 @@ const game = @import("../game.zig");
 const std = @import("std");
 const player = @import("../player.zig");
 const levelEditor = @import("levelEditor.zig");
+const builtin = @import("builtin"); // Import builtin module for target info
+
 pub const level = struct {
     map: [9][16]game.blockType,
     player: []rl.Vector2,
@@ -16,32 +18,74 @@ pub const level = struct {
 
 pub var currentLevelNum = 0;
 
+const level1_json_data = @embedFile("./level1.json");
+const level2_json_data = @embedFile("./level2.json");
+const level3_json_data = @embedFile("./level3.json");
+const level4_json_data = @embedFile("./level4.json");
+const level5_json_data = @embedFile("./level5.json");
+
+const embedded_levels = [_]struct { u32, []const u8 }{
+    .{ 1, level1_json_data },
+    .{ 2, level2_json_data },
+    .{ 3, level3_json_data },
+    .{ 4, level4_json_data },
+    .{ 5, level5_json_data },
+};
+
 pub fn loadLevelFromJson(name: u32) level {
-    var thing = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = thing.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const alloc = gpa.allocator();
 
-    const prefix = "./src/maps/level";
-    const suffix = ".json";
+    var jsonData: []const u8 = undefined;
 
-    const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
-        std.debug.print("Failed to Merge the int and the string: {}", .{err});
+    const is_wasm = true; //builtin.target.cpu.arch == .wasm32;
+
+    var found_embedded = false;
+    for (embedded_levels) |item| {
+        if (item[0] == name) {
+            jsonData = item[1];
+            found_embedded = true;
+            break;
+        }
+    }
+
+    if (found_embedded) {
+        std.log.info("found", .{});
+    } else if (!is_wasm) {
+        // If not found in embedded and NOT compiling for WASM,
+        // attempt to read from the file system.
+        const prefix = "./src/maps/level";
+        const suffix = ".json";
+
+        const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
+            std.debug.print("Failed to merge string and int for path: {}\n", .{err});
+            return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
+        };
+        defer alloc.free(newPrefix);
+
+        const path = alloc.alloc(u8, newPrefix.len + suffix.len) catch |err| {
+            std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
+            return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
+        };
+        std.mem.copyForwards(u8, path[0..], newPrefix);
+        std.mem.copyForwards(u8, path[newPrefix.len..], suffix);
+        defer alloc.free(path);
+
+        jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
+            std.debug.print("Failed to read the file: {}. Ensure it exists and is accessible.\n", .{err});
+            return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
+        };
+        defer alloc.free(jsonData); // jsonData was allocated by readFileAlloc
+    } else {
+        // If WASM and not found in embedded, this indicates an issue
+        std.debug.print("Error: Level {} not found in embedded data (WASM target), and file system access is unavailable.\n", .{name});
         return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
-    };
-    const path = alloc.alloc(u8, newPrefix.len + suffix.len) catch |err| {
-        std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
-        return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
-    };
-    std.mem.copyForwards(u8, path[0..], newPrefix);
-    std.mem.copyForwards(u8, path[newPrefix.len..], suffix);
-    const jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
-        std.debug.print("Failed to read the file: {}", .{err});
-        return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
-    };
+    }
 
     const result = std.json.parseFromSlice(level, alloc, jsonData, .{
         .ignore_unknown_fields = true,
     }) catch |err| {
-        std.debug.print("Failed to parse json: {}", .{err});
+        std.debug.print("Failed to parse json for level {}: {}\n", .{ name, err });
         return level{ .map = player.mat16x9, .player = &[_]rl.Vector2{} };
     };
 
@@ -61,7 +105,7 @@ pub fn setLevel(levelNumber: u32) void {
     for (levelA.player) |elem| {
         const newBody = rl.Vector2{ .x = elem.x, .y = elem.y };
         player.body.append(newBody) catch |err| {
-            std.debug.print("Failed to append position: {}\n", .{err});
+            std.debug.print("Failed to append .position body (from lvl Manager): {}\n", .{err});
             return;
         };
     }
@@ -93,10 +137,15 @@ const resolutionVecs = [_]rl.Vector2{ rl.Vector2{ .x = 1280, .y = 720 }, rl.Vect
 
 pub fn loadMenu() bool {
     if (currentMenu == menuType.main) {
-        const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 1.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Level Select");
-        const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 3 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Level Editor");
-        const options_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 4.5 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Options");
-        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = 1.25 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .width = 4.0 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16, .x = (@as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize * 4)) / 2.0), .y = 6 * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 }, "Quit");
+        const screen_width_f = @as(f32, @floatFromInt(rl.getScreenWidth()));
+        const button_height = 1.25 * screen_width_f / 16;
+        const button_width = 4.0 * screen_width_f / 16;
+        const button_x = (screen_width_f - @as(f32, @floatFromInt(game.boxSize * 4))) / 2.0;
+
+        const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = button_height, .width = button_width, .x = button_x, .y = 1.5 * screen_width_f / 16 }, "Level Select");
+        const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = button_height, .width = button_width, .x = button_x, .y = 3 * screen_width_f / 16 }, "Level Editor");
+        const options_button = gui.guiButton(rl.Rectangle{ .height = button_height, .width = button_width, .x = button_x, .y = 4.5 * screen_width_f / 16 }, "Options");
+        const quitGame_button = gui.guiButton(rl.Rectangle{ .height = button_height, .width = button_width, .x = button_x, .y = 6 * screen_width_f / 16 }, "Quit");
 
         if (levelSelect_button == 1) {
             currentMenu = menuType.levelSelect;

@@ -30,7 +30,7 @@ pub const emptyMap = [9][16]blockType{
 pub fn initLevelEditor() void {
     player.mat16x9 = emptyMap;
 }
-pub var body = std.ArrayList(rl.Vector2).init(std.heap.page_allocator);
+pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
 
 var userInput: [64:0]u8 = undefined;
 var view: bool = true;
@@ -54,7 +54,7 @@ pub fn loadLevelEditor() void {
                 (@abs(y - @as(i32, @intFromFloat(body.items[0].y))) == 1 and @abs(x - @as(i32, @intFromFloat(body.items[0].x))) == 0))
             {
                 body.insert(0, rl.Vector2{ .x = @as(f32, @floatFromInt(x)), .y = @as(f32, @floatFromInt(y)) }) catch |err| {
-                    std.debug.print("Failed to append position: {}\n", .{err});
+                    std.debug.print("Failed to insert/app body: {}\n", .{err});
                     return;
                 };
                 std.log.debug("vector {}", .{body.items[body.items.len - 1]});
@@ -96,7 +96,7 @@ pub fn loadLevelEditor() void {
     }
 }
 fn writeLevelToFile(level1: levelManager.level, name: [64:0]u8) void {
-    const allocator = std.heap.page_allocator;
+    const allocator = std.heap.c_allocator;
 
     const name_slice = std.mem.sliceTo(&name, 0);
     const name_len = name_slice.len;

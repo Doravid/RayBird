@@ -16,7 +16,7 @@ const vic = blockType.vic;
 const Color = rl.Color;
 const KeyboardKey = rl.KeyboardKey;
 
-// pub var sounds = std.ArrayList(rl.Sound).init(std.heap.page_allocator);
+// pub var sounds = std.ArrayList(rl.Sound).init(std.heap.c_allocator);
 
 pub var body_textures: [4]rl.Texture2D = undefined;
 
@@ -129,7 +129,6 @@ fn drawSky(cloud_t: rl.Texture2D) void {
     rl.drawRectangleGradientV(0, 0, rl.getScreenWidth(), rl.getScreenHeight(), Color.sky_blue, Color.orange);
     //Draw the Sun
     drawSmoothCircle(x, @floatFromInt(boxSize * 4), @floatFromInt(boxSize * 2), 50, rl.Color.init(255, 245, 230, 255));
-    std.log.debug("Box size {}", .{boxSize});
 
     //draw the Clouds
     drawTextureNew(cloud_t, xCloud, boxSize, rl.Color.init(255, 250, 245, 230), 0.5);

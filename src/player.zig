@@ -26,16 +26,15 @@ pub var mat16x9 = [9][16]blockType{
 };
 
 //Player history!
-pub var undoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.page_allocator);
-var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.page_allocator);
+pub var undoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
+var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.c_allocator);
 
-pub var redoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.page_allocator);
+pub var redoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 
 //Player body.
 //0 is always the head, body.items.len is always the floating tail (The square right behind the tail. )
-pub var body = std.ArrayList(rl.Vector2).init(std.heap.page_allocator);
+pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
 
-//Moves the player and adds their previous position to player history. (If the move is valid ofc)
 //Moves the player and adds their previous position to player history. (If the move is valid ofc)
 pub fn updatePos() void {
     if (rl.isKeyPressed(rl.KeyboardKey.r)) {
@@ -75,11 +74,11 @@ pub fn updatePos() void {
 fn undo() void {
     if (undoHistory.items.len <= 0) return;
     const oldBody = body.clone() catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to clone body: {}\n", .{err});
         return;
     };
     redoHistory.append(oldBody) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to append redo history r edo: {}\n", .{err});
         return;
     };
     body = undoHistory.pop();
@@ -95,15 +94,15 @@ fn redo() void {
         i += 1;
     }
     const clone = body.clone() catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to clone body redo: {}\n", .{err});
         return;
     };
     undoHistory.append(clone) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to append undo position: {}\n", .{err});
         return;
     };
     mapHistory.append(mat16x9) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to append map history: {}\n", .{err});
         return;
     };
     body = redoHistory.pop();
@@ -118,15 +117,15 @@ fn movePlayer(dir: direction) void {
     // const sound = rl.getRandomValue(0, 1);
     // rl.playSound(game.sounds.items[@intCast(sound)]);
     const clone = body.clone() catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to clone body: {}\n", .{err});
         return;
     };
     undoHistory.append(clone) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to append undo history: {}\n", .{err});
         return;
     };
     mapHistory.append(mat16x9) catch |err| {
-        std.debug.print("Failed to append position: {}\n", .{err});
+        std.debug.print("Failed to append map history: {}\n", .{err});
         return;
     };
     var i: usize = body.items.len;
@@ -160,7 +159,7 @@ fn movePlayer(dir: direction) void {
     }
     if (newHead == blockType.frt) {
         body.append(tail) catch |err| {
-            std.debug.print("Failed to append position: {}\n", .{err});
+            std.debug.print("Failed to append body position: {}\n", .{err});
             return;
         };
     } else {

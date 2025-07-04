@@ -25,6 +25,8 @@ pub fn build(b: *std.Build) !void {
         link_step.addArg("--emrun");
         link_step.addArg("--embed-file");
         link_step.addArg("resources/");
+        link_step.addArg("-z");
+        link_step.addArg("stack-size=2097152");
         b.getInstallStep().dependOn(&link_step.step);
         const run_step = try rlz.emcc.emscriptenRunStep(b);
         run_step.step.dependOn(&link_step.step);
