@@ -47,14 +47,17 @@ pub fn loadLevelEditor() void {
         if (currentBlock != bdy) game.setBlockAt(pos.x, pos.y, currentBlock);
 
         if (currentBlock == bdy and replacedBlock != bdy) {
-            const x: f32 = @as(f32, @floatFromInt(@divTrunc(@as(i32, @intFromFloat((pos.x))), game.boxSize))) * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16;
-            const y: f32 = @as(f32, @floatFromInt(@divTrunc(@as(i32, @intFromFloat((pos.y))), game.boxSize))) * @as(f32, @floatFromInt(rl.getScreenWidth())) / 16;
-            if (body.items.len == 0 or (@abs(x - body.items[0].x) == @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 and @abs(y - body.items[0].y) == 0) or (@abs(y - body.items[0].y) == @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 and @abs(x - body.items[0].x) == 0)) {
-                body.insert(0, rl.Vector2{ .x = x, .y = y }) catch |err| {
+            const x: i32 = @divTrunc(@as(i32, @intFromFloat(pos.x)), game.boxSize);
+            const y: i32 = @divTrunc(@as(i32, @intFromFloat(pos.y)), game.boxSize);
+            if (body.items.len == 0 or
+                (@abs(x - @as(i32, @intFromFloat(body.items[0].x))) == 1 and @abs(y - @as(i32, @intFromFloat(body.items[0].y))) == 0) or
+                (@abs(y - @as(i32, @intFromFloat(body.items[0].y))) == 1 and @abs(x - @as(i32, @intFromFloat(body.items[0].x))) == 0))
+            {
+                body.insert(0, rl.Vector2{ .x = @as(f32, @floatFromInt(x)), .y = @as(f32, @floatFromInt(y)) }) catch |err| {
                     std.debug.print("Failed to append position: {}\n", .{err});
                     return;
                 };
-
+                std.log.debug("vector {}", .{body.items[body.items.len - 1]});
                 game.setBlockAt((pos.x), (pos.y), currentBlock);
             }
         }
@@ -87,6 +90,9 @@ pub fn loadLevelEditor() void {
         var x = @intFromEnum(currentBlock) - 1;
         if (x < 0) x = numBlocks - 1;
         currentBlock = @enumFromInt(x);
+    }
+    if (body.items.len > 0) {
+        player.drawPlayer(&game.body_textures, body);
     }
 }
 fn writeLevelToFile(level1: levelManager.level, name: [64:0]u8) void {

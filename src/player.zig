@@ -50,24 +50,24 @@ pub fn updatePos() void {
         redo();
     }
 
-    if ((rl.isKeyPressed(rl.KeyboardKey.w) or (rl.isKeyPressed(rl.KeyboardKey.up))) and (body.items[0].y) - @as(f32, @floatFromInt(game.boxSize)) >= 0) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.w) or (rl.isKeyPressed(rl.KeyboardKey.up))) and (body.items[0].y) - 1 >= 0) {
         std.debug.print("{}", .{body.items[0].y});
-        if (game.posMoveable(body.items[0].x, body.items[0].y - @as(f32, @floatFromInt(game.boxSize)))) {
+        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y - 1))) {
             movePlayer(direction.up);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.a) or (rl.isKeyPressed(rl.KeyboardKey.left))) and body.items[0].x - @as(f32, @floatFromInt(game.boxSize)) >= 0) {
-        if (game.posMoveable(body.items[0].x - @as(f32, @floatFromInt(game.boxSize)), body.items[0].y)) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.a) or (rl.isKeyPressed(rl.KeyboardKey.left))) and body.items[0].x - 1 >= 0) {
+        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x - 1), @intFromFloat(body.items[0].y))) {
             movePlayer(direction.left);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.s) or (rl.isKeyPressed(rl.KeyboardKey.down))) and body.items[0].y + @as(f32, @floatFromInt(game.boxSize)) <= @as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize))) {
-        if (game.posMoveable(body.items[0].x, body.items[0].y + @as(f32, @floatFromInt(game.boxSize)))) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.s) or (rl.isKeyPressed(rl.KeyboardKey.down))) and body.items[0].y + 1 < 9) {
+        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y + 1))) {
             movePlayer(direction.down);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.d) or (rl.isKeyPressed(rl.KeyboardKey.right))) and body.items[0].x + @as(f32, @floatFromInt(game.boxSize)) <= @as(f32, @floatFromInt(rl.getScreenWidth() - game.boxSize))) {
-        if (game.posMoveable(body.items[0].x + @as(f32, @floatFromInt(game.boxSize)), body.items[0].y)) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.d) or (rl.isKeyPressed(rl.KeyboardKey.right))) and body.items[0].x + 1 < 16) {
+        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x + 1), @intFromFloat(body.items[0].y))) {
             movePlayer(direction.right);
         }
     }
@@ -91,7 +91,7 @@ fn redo() void {
     if (redoHistory.items.len <= 0) return;
     var i: usize = 0;
     while (i < body.items.len) {
-        game.setBlockAt(body.items[i].x, body.items[i].y, air);
+        game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), air);
         i += 1;
     }
     const clone = body.clone() catch |err| {
@@ -109,7 +109,7 @@ fn redo() void {
     body = redoHistory.pop();
     i = 0;
     while (i < body.items.len) {
-        game.setBlockAt(body.items[i].x, body.items[i].y, bdy);
+        game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), bdy);
         i += 1;
     }
 }
@@ -137,19 +137,21 @@ fn movePlayer(dir: direction) void {
     }
     switch (dir) {
         direction.right => {
-            body.items[0].x += @as(f32, @floatFromInt(game.boxSize));
+            body.items[0].x += 1;
         },
         direction.left => {
-            body.items[0].x -= @as(f32, @floatFromInt(game.boxSize));
+            body.items[0].x -= 1;
         },
         direction.up => {
-            body.items[0].y -= @as(f32, @floatFromInt(game.boxSize));
+            body.items[0].y -= 1;
         },
         direction.down => {
-            body.items[0].y += @as(f32, @floatFromInt(game.boxSize));
+            body.items[0].y += 1;
         },
     }
-    const newHead = game.getBlockAt(body.items[0].x, body.items[0].y);
+    std.log.debug("body x / y {} {}", .{ @as(i32, @intFromFloat(body.items[0].x)), @as(i32, @intFromFloat(body.items[0].y)) });
+
+    const newHead = game.getBlockWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y));
     if (newHead == blockType.vic) {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
     }
@@ -162,9 +164,9 @@ fn movePlayer(dir: direction) void {
             return;
         };
     } else {
-        game.setBlockAt(tail.x, tail.y, air);
+        game.setBlockWorldGrid(@intFromFloat(tail.x), @intFromFloat(tail.y), air);
     }
-    if (body.items.len > 0) game.setBlockAt(body.items[0].x, body.items[0].y, bdy);
+    if (body.items.len > 0) game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), air);
 }
 pub fn updateGravity() void {
     var i: usize = body.items.len;
@@ -173,7 +175,7 @@ pub fn updateGravity() void {
     var shouldDie = false;
     while (i > 0) {
         i -= 1;
-        const block = game.getBlockAt(body.items[i].x, body.items[i].y + @as(f32, @floatFromInt(game.boxSize)));
+        const block = game.getBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y + 1));
         if (block == sol or block == frt) {
             canFall = false;
             movementLocked = false;
@@ -196,20 +198,20 @@ pub fn updateGravity() void {
         while (i > 0) {
             i -= 1;
 
-            const block = game.getBlockAt(body.items[i].x, body.items[i].y + @as(f32, @floatFromInt(game.boxSize)));
+            const block = game.getBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y + 1));
             if (block == blockType.vic) {
                 levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
                 break;
             }
 
-            game.setBlockAt(body.items[i].x, body.items[i].y, air);
+            game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), air);
         }
         fall();
-    } else if (game.getBlockAt(body.items[0].x, body.items[0].y) == air) {
+    } else if (game.getBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y)) == air) {
         i = body.items.len;
         while (i > 0) {
             i -= 1;
-            game.setBlockAt(body.items[i].x, body.items[i].y, bdy);
+            game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), bdy);
         }
     }
 }
@@ -217,13 +219,20 @@ fn fall() void {
     var i: usize = body.items.len;
     while (i > 0) {
         i -= 1;
-        body.items[i].y += 7 * @as(f32, @floatFromInt(game.boxSize)) * rl.getFrameTime();
+        body.items[i].y += 10 * rl.getFrameTime();
     }
 }
 
-pub fn drawPlayer(texture: rl.Texture) void {
-    for (body.items) |elem| {
-        game.drawTexture(texture, @intFromFloat(elem.x), @intFromFloat(elem.y), rl.Color.white);
+pub fn drawPlayer(textures: []const rl.Texture, custom_body: ?std.ArrayList(rl.Vector2)) void {
+    const body_to_use = if (custom_body) |cb| cb.items else body.items;
+    for (body_to_use, 0..) |elem, i| {
+        if (i == 0) {
+            game.drawTexture(textures[0], @as(i32, @intFromFloat(elem.x * @as(f32, @floatFromInt(game.boxSize)))), @as(i32, @intFromFloat(elem.y * @as(f32, @floatFromInt(game.boxSize)))), rl.Color.white);
+        } else if (@mod(i, 2) == 1) {
+            game.drawTexture(textures[1], @as(i32, @intFromFloat(elem.x * @as(f32, @floatFromInt(game.boxSize)))), @as(i32, @intFromFloat(elem.y * @as(f32, @floatFromInt(game.boxSize)))), rl.Color.white);
+        } else {
+            game.drawTexture(textures[2], @as(i32, @intFromFloat(elem.x * @as(f32, @floatFromInt(game.boxSize)))), @as(i32, @intFromFloat(elem.y * @as(f32, @floatFromInt(game.boxSize)))), rl.Color.white);
+        }
     }
 }
 pub fn clearPlayer() void {

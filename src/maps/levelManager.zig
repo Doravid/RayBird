@@ -59,7 +59,7 @@ pub fn setLevel(levelNumber: u32) void {
         maxLevelUnlocked = levelNumber - 1;
     }
     for (levelA.player) |elem| {
-        const newBody = rl.Vector2{ .x = @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 * (elem.x / 120), .y = @as(f32, @floatFromInt(rl.getScreenWidth())) / 16 * (elem.y / 120) };
+        const newBody = rl.Vector2{ .x = elem.x, .y = elem.y };
         player.body.append(newBody) catch |err| {
             std.debug.print("Failed to append position: {}\n", .{err});
             return;

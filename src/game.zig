@@ -18,12 +18,14 @@ const KeyboardKey = rl.KeyboardKey;
 
 // pub var sounds = std.ArrayList(rl.Sound).init(std.heap.page_allocator);
 
+pub var body_textures: [4]rl.Texture2D = undefined;
+
 pub var boxSize: i32 = 1920 / 16;
 pub fn runGame() !void {
     // try sounds.append(rl.loadSound("resources/audio/move.mp3"));
     // try sounds.append(rl.loadSound("resources/audio/move2.mp3"));
 
-    const box = rl.loadImage("resources/box.png");
+    // const box = rl.loadImage("resources/box.png");
     const plat = rl.loadImage("resources/dirt.png");
     const plat2 = rl.loadImage("resources/dirt2.png");
     const grass = rl.loadImage("resources/grass.png");
@@ -33,7 +35,12 @@ pub fn runGame() !void {
     const spike = rl.loadImage("resources/spike.png");
     const cloud = rl.loadImage("resources/cloud1.png");
 
-    const box_t = rl.loadTextureFromImage(box);
+    const body1 = rl.loadImage("resources/head.png");
+    const body2 = rl.loadImage("resources/body1.png");
+    const body3 = rl.loadImage("resources/body2.png");
+    const body4 = rl.loadImage("resources/body4.png");
+
+    // const box_t = rl.loadTextureFromImage(box);
     const plat_t = rl.loadTextureFromImage(plat);
     const plat2_t = rl.loadTextureFromImage(plat2);
     const grass_t = rl.loadTextureFromImage(grass);
@@ -43,7 +50,14 @@ pub fn runGame() !void {
     const spike_t = rl.loadTextureFromImage(spike);
     const cloud_t = rl.loadTextureFromImage(cloud);
 
-    defer rl.unloadImage(box);
+    const body1_t = rl.loadTextureFromImage(body1);
+    const body2_t = rl.loadTextureFromImage(body2);
+    const body3_t = rl.loadTextureFromImage(body3);
+    const body4_t = rl.loadTextureFromImage(body4);
+
+    body_textures = [_]rl.Texture2D{ body1_t, body2_t, body3_t, body4_t };
+
+    // defer rl.unloadImage(box);
     defer rl.unloadImage(plat);
     defer rl.unloadImage(plat2);
     defer rl.unloadImage(fruit);
@@ -52,6 +66,11 @@ pub fn runGame() !void {
     defer rl.unloadImage(spike);
     defer rl.unloadImage(cloud);
     defer rl.unloadImage(grass);
+
+    defer rl.unloadImage(body1);
+    defer rl.unloadImage(body2);
+    defer rl.unloadImage(body3);
+    defer rl.unloadImage(body4);
 
     defer rl.closeWindow(); // Close window and OpenGL context
     var inMenus: bool = true;
@@ -73,12 +92,12 @@ pub fn runGame() !void {
             inMenus = levelManager.loadMenu();
             _ = levelManager.checkPause();
         } else {
-            drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, box_t, grass_t);
+            drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, grass_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
                     sol => plat_t,
                     frt => fruit_t,
-                    bdy => box_t,
+                    bdy => body_textures[0],
                     air => del_t,
                     vic => victory_t,
                     spk => spike_t,
@@ -87,7 +106,7 @@ pub fn runGame() !void {
                 rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(rl.getScreenWidth() - @divTrunc(boxSize, 4) * 3)), .y = @as(f32, @floatFromInt(boxSize)) / 4, .height = @as(f32, @floatFromInt(boxSize)) / 2, .width = @as(f32, @floatFromInt(boxSize)) / 2 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
                 rl.drawText("Current Block", rl.getScreenWidth() - boxSize, @divTrunc(boxSize, 7) * 6, @divTrunc(boxSize, 8), Color.black);
             }
-            player.drawPlayer(box_t);
+            player.drawPlayer(&body_textures, null);
             inMenus = levelManager.checkPause();
         }
         drawWater();
@@ -139,7 +158,7 @@ pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Co
     }
 }
 //Draws all of the boxes in the map each frame.
-fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, box_t: rl.Texture, grass_t: rl.Texture) void {
+fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, grass_t: rl.Texture) void {
     for (player.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             const rw: i32 = @intCast(cIndex);
@@ -149,7 +168,7 @@ fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit
                 vic => drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
                 frt => drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white),
                 spk => drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
-                bdy => drawTexture(box_t, boxSize * rw, col * boxSize, rl.Color.white),
+                //bdy => drawTexture(box_t, boxSize * rw, col * boxSize, rl.Color.white),
                 else => undefined,
             }
         }
@@ -203,15 +222,29 @@ pub fn posMoveable(x: f32, y: f32) bool {
     }
     return false;
 }
+pub fn posMoveableWorldGrid(x: i32, y: i32) bool {
+    const blk = getBlockWorldGrid(x, y);
+    if (blk == air or blk == frt or blk == vic or blk == spk) {
+        return true;
+    }
+    return false;
+}
 //Returns the block at a given x,y coordinate (in pixel coordinates)
 pub fn getBlockAt(x: f32, y: f32) blockType {
     const new_x = x / @as(f32, @floatFromInt(boxSize));
     const new_y = y / @as(f32, @floatFromInt(boxSize));
     if (new_x >= 16 or new_y >= 9 or new_x < 0 or new_y < 0) {
-        std.debug.print("{}, {} is out of bounds\n", .{ @as(i32, @intFromFloat(x)), @as(i32, @intFromFloat(y)) });
+        std.debug.print("{}, {} is out of bounds (getBlockAt)\n", .{ @as(i32, @intFromFloat(x)), @as(i32, @intFromFloat(y)) });
         return blockType.null;
     }
     return player.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)];
+}
+pub fn getBlockWorldGrid(x: i32, y: i32) blockType {
+    if (x >= 16 or y >= 9 or x < 0 or y < 0) {
+        std.debug.print("{}, {} is out of bounds (getBlockWorldGrid) \n", .{ (x), (y) });
+        return blockType.null;
+    }
+    return player.mat16x9[@intCast(y)][@intCast(x)];
 }
 //Uses screen coords (not box Coords, which are different and used by the mat16x9 array)
 pub fn setBlockAt(x: f32, y: f32, block: blockType) void {
@@ -222,6 +255,13 @@ pub fn setBlockAt(x: f32, y: f32, block: blockType) void {
         return;
     }
     player.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)] = block;
+}
+pub fn setBlockWorldGrid(x: i32, y: i32, block: blockType) void {
+    if (x >= 16 or y >= 9 or x < 0 or y < 0) {
+        std.debug.print("Out of bounds\n", .{});
+        return;
+    }
+    player.mat16x9[@intCast(y)][@intCast(x)] = block;
 }
 pub fn setWindowSizeFromVector(ScreenSize: rl.Vector2) void {
     rl.setWindowSize(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
