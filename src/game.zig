@@ -15,10 +15,14 @@ const frt = blockType.frt;
 const vic = blockType.vic;
 const Color = rl.Color;
 const KeyboardKey = rl.KeyboardKey;
-
+var backgroundTexture: rl.RenderTexture = undefined;
+var waterTexture: rl.RenderTexture = undefined;
 // pub var sounds = std.ArrayList(rl.Sound).init(std.heap.c_allocator);
 
 pub var body_textures: [4]rl.Texture2D = undefined;
+var bloomShader: rl.Shader = undefined;
+var pixelShader: rl.Shader = undefined;
+var finePixelShader: rl.Shader = undefined;
 
 pub var boxSize: i32 = 1920 / 16;
 pub fn runGame() !void {
@@ -39,6 +43,13 @@ pub fn runGame() !void {
     const body2 = rl.loadImage("resources/body1.png");
     const body3 = rl.loadImage("resources/body2.png");
     const body4 = rl.loadImage("resources/body4.png");
+
+    bloomShader = rl.loadShader(null, "resources/shaders/bloom.fs");
+    pixelShader = rl.loadShader(null, "resources/shaders/pixel.fs");
+    finePixelShader = rl.loadShader(null, "resources/shaders/pixel_fine.fs");
+
+    backgroundTexture = rl.loadRenderTexture(1920, 1080);
+    waterTexture = rl.loadRenderTexture(1920, 1080);
 
     // const box_t = rl.loadTextureFromImage(box);
     const plat_t = rl.loadTextureFromImage(plat);
@@ -81,16 +92,18 @@ pub fn runGame() !void {
         player.updateGravity();
         player.updatePos();
         fullScreen();
+
         // Draw
         rl.beginDrawing();
         defer rl.endDrawing();
         //Clear and draw background.
         rl.clearBackground(rl.Color.white);
         drawSky(cloud_t);
-        rl.endShaderMode();
+
         if (inMenus) {
+            drawWater();
+
             inMenus = levelManager.loadMenu();
-            _ = levelManager.checkPause();
         } else {
             drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, grass_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
@@ -105,36 +118,48 @@ pub fn runGame() !void {
                 };
                 rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(rl.getScreenWidth() - @divTrunc(boxSize, 4) * 3)), .y = @as(f32, @floatFromInt(boxSize)) / 4, .height = @as(f32, @floatFromInt(boxSize)) / 2, .width = @as(f32, @floatFromInt(boxSize)) / 2 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
                 rl.drawText("Current Block", rl.getScreenWidth() - boxSize, @divTrunc(boxSize, 7) * 6, @divTrunc(boxSize, 8), Color.black);
+                drawWater();
             }
             player.drawPlayer(&body_textures, null);
             inMenus = levelManager.checkPause();
+            drawWater();
         }
-        drawWater();
     }
 }
 fn drawSky(cloud_t: rl.Texture2D) void {
     const time: f32 = @floatCast(rl.getTime());
-    const modTime: f64 = (std.math.mod(f64, time / 110, 1)) catch |err| {
+    const modTime: f64 = (std.math.mod(f64, time / 70, 1.5)) catch |err| {
         std.debug.print("{}", .{err});
         return;
     };
-    const modTime2: f64 = (std.math.mod(f64, (time + 35) / 80, 1)) catch |err| {
+    const modTime2: f64 = (std.math.mod(f64, (time) / 80, 2.5)) catch |err| {
         std.debug.print("{}", .{err});
         return;
     };
-    const xCloud: i32 = @as(i32, @intFromFloat(modTime * 2.4 * @as(f32, @floatFromInt(boxSize * 10)))) - boxSize * 5;
+    const xCloud: i32 = @as(i32, @intFromFloat(modTime * 1.6 * @as(f32, @floatFromInt(boxSize * 10)))) - boxSize * 5;
     const xCloud2: i32 = @as(i32, @intFromFloat(modTime2 * 1.3 * @as(f32, @floatFromInt(boxSize * 10)))) - boxSize * 14;
     const x = @as(f32, @floatFromInt(rl.getScreenWidth())) * @abs(std.math.sin(time / 500));
-    //Draw the Sky Background
-    rl.drawRectangleGradientV(0, 0, rl.getScreenWidth(), rl.getScreenHeight(), Color.sky_blue, Color.orange);
-    //Draw the Sun
-    drawSmoothCircle(x, @floatFromInt(boxSize * 4), @floatFromInt(boxSize * 2), 50, rl.Color.init(255, 245, 230, 255));
 
-    //draw the Clouds
-    drawTextureNew(cloud_t, xCloud, boxSize, rl.Color.init(255, 250, 245, 230), 0.5);
-    drawTextureNew(cloud_t, rl.getScreenWidth() - xCloud - boxSize * 4, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 2.5), rl.Color.init(255, 250, 245, 230), 0.45);
-    drawTextureNew(cloud_t, xCloud2, boxSize * 2, rl.Color.init(255, 250, 245, 230), 0.8);
-    drawTextureNew(cloud_t, rl.getScreenWidth() - xCloud2 - boxSize * 4, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 2.5 + std.math.sin(time / 10) * @as(f32, @floatFromInt(boxSize)) / 2), rl.Color.init(255, 250, 245, 230), 0.7);
+    //RENDER THE BACKGROUND TO A TEXTURE
+    rl.beginTextureMode(backgroundTexture);
+    rl.clearBackground(rl.Color.init(0, 0, 0, 0));
+
+    //SKY AND SUN
+    rl.drawRectangleGradientV(0, 0, rl.getScreenWidth(), rl.getScreenHeight(), Color.sky_blue, Color.orange);
+    drawSmoothCircle(x, @floatFromInt(boxSize * 4), @floatFromInt(boxSize * 2), 50, rl.Color.init(250, 195, 190, 255));
+
+    //CLOUDS
+    drawTextureNew(cloud_t, xCloud, boxSize, rl.Color.init(255, 250, 245, 210), 0.5);
+    drawTextureNew(cloud_t, rl.getScreenWidth() - xCloud - boxSize * 4, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 2.5), rl.Color.init(255, 250, 245, 210), 0.45);
+    drawTextureNew(cloud_t, xCloud2, boxSize * 2, rl.Color.init(255, 250, 245, 210), 0.8);
+    drawTextureNew(cloud_t, rl.getScreenWidth() - xCloud2 - boxSize * 4, @intFromFloat(@as(f32, @floatFromInt(boxSize)) * 2.5 + std.math.sin(time / 10) * @as(f32, @floatFromInt(boxSize)) / 2), rl.Color.init(255, 250, 245, 210), 0.7);
+
+    rl.endTextureMode();
+
+    //RENDER THE TEXTURE WITH THE SHADER
+    rl.beginShaderMode(pixelShader);
+    rl.drawTextureRec(backgroundTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(backgroundTexture.texture.width), .height = -@as(f32, @floatFromInt(backgroundTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.white);
+    rl.endShaderMode();
 }
 pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Color) void {
     const angleStep = 2.0 * std.math.pi / @as(f32, @floatFromInt(segments));
@@ -200,15 +225,53 @@ pub fn drawTextureNew(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color,
     const rotation = 0.0;
     rl.drawTexturePro(texture, source, dest, origin, rotation, tint);
 }
-
 fn drawWater() void {
-    const time: f32 = @floatCast(rl.getTime() * 1.35);
+    const time: f32 = @floatCast(rl.getTime());
+    const screenWidth: f32 = @as(f32, @floatFromInt(rl.getScreenWidth()));
+    const screenHeight: f32 = @as(f32, @floatFromInt(rl.getScreenHeight()));
 
-    rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.cos(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())) / 2, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.sin(time + 0.3) * 30 - 40), @floatFromInt(boxSize), Color.blue);
-    rl.drawLineBezier(rl.Vector2.init(0, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.cos(time * 0.9) * 20), rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())) / 2, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.sin(time * 0.9) * 20), @floatFromInt(boxSize), Color.dark_blue);
+    // Wave parameters - all scaled to screen dimensions
+    const waveLength: f32 = screenWidth / 2.5;
+    const amplitude1: f32 = screenHeight * 0.01; // 18.0 scaled to ~2.5% of screen height
+    const amplitude2: f32 = screenHeight * 0.01; // 11.0 scaled to ~1.5% of screen height
+    const baseOffset1: f32 = screenHeight * 0.026; // 40.0 scaled to ~5.6% of screen height
+    const baseOffset2: f32 = -screenHeight * 0.021; // -15.0 scaled to ~-2.1% of screen height
 
-    rl.drawLineBezier(rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())) / 2, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.sin(time + 0.3) * 30 - 40), rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())), @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.cos(time + 0.3) * 30 - 40), @floatFromInt(boxSize), Color.blue);
-    rl.drawLineBezier(rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())) / 2, @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.sin(time * 0.9) * 20), rl.Vector2.init(@as(f32, @floatFromInt(rl.getScreenWidth())), @as(f32, @floatFromInt(rl.getScreenHeight())) - std.math.cos(time * 0.9) * 20), @floatFromInt(boxSize), Color.dark_blue);
+    const heightVariation1: f32 = std.math.sin(time * 0.3) * screenHeight * 0.011; // 8.0 scaled to ~1.1% of screen height
+    const heightVariation2: f32 = std.math.cos(time * 0.4) * screenHeight * 0.0083; // 6.0 scaled to ~0.83% of screen height
+
+    const segmentCount: i32 = 3; // Number of segments to draw smooth waves
+
+    rl.beginTextureMode(waterTexture);
+    rl.clearBackground(rl.Color.init(0, 0, 0, 0));
+
+    // Draw foreground waves (blue)
+    var i: i32 = 0;
+    while (i < segmentCount) : (i += 1) {
+        const x1 = @as(f32, @floatFromInt(i)) * screenWidth / @as(f32, @floatFromInt(segmentCount));
+        const x2 = @as(f32, @floatFromInt(i + 1)) * screenWidth / @as(f32, @floatFromInt(segmentCount));
+
+        const y1 = screenHeight - std.math.sin((x1 / waveLength) * 2.0 * std.math.pi + time + 0.3) * (amplitude1 + heightVariation1) - baseOffset1;
+        const y2 = screenHeight - std.math.sin((x2 / waveLength) * 2.0 * std.math.pi + time + 0.3) * (amplitude1 + heightVariation1) - baseOffset1;
+
+        rl.drawLineBezier(rl.Vector2.init(x1, y1), rl.Vector2.init(x2, y2), @floatFromInt(boxSize), Color.blue);
+    }
+    // Draw background waves (dark blue)
+    i = 0;
+    while (i < segmentCount) : (i += 1) {
+        const x1 = @as(f32, @floatFromInt(i)) * screenWidth / @as(f32, @floatFromInt(segmentCount));
+        const x2 = @as(f32, @floatFromInt(i + 1)) * screenWidth / @as(f32, @floatFromInt(segmentCount));
+
+        const y1 = screenHeight - std.math.sin((x1 / waveLength) * 2.0 * std.math.pi + time * 0.9) * (amplitude2 + heightVariation2) - baseOffset2;
+        const y2 = screenHeight - std.math.sin((x2 / waveLength) * 2.0 * std.math.pi + time * 0.9) * (amplitude2 + heightVariation2) - baseOffset2;
+
+        rl.drawLineBezier(rl.Vector2.init(x1, y1), rl.Vector2.init(x2, y2), @floatFromInt(boxSize), Color.dark_blue);
+    }
+    rl.endTextureMode();
+
+    rl.beginShaderMode(finePixelShader);
+    rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.white);
+    rl.endShaderMode();
 }
 fn fullScreen() void {
     if (rl.isKeyPressed(rl.KeyboardKey.f11)) {

@@ -177,7 +177,6 @@ pub fn updateGravity() void {
         i -= 1;
         const block = game.getBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y + 1));
         if (block == sol or block == frt) {
-            std.log.debug("culprit at: {} {}", .{ @as(i32, @intFromFloat(body.items[i].x)), @as(i32, @intFromFloat(body.items[i].y + 1)) });
             canFall = false;
             movementLocked = false;
             break;

@@ -176,6 +176,7 @@ pub fn loadMenu() bool {
         const width: f32 = @floatFromInt(game.boxSize * 4);
         const height: f32 = @floatFromInt(game.boxSize);
         const center: f32 = @floatFromInt(@divTrunc(rl.getScreenWidth(), 2));
+        //RESOLUTION CONTROLS
         gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 48));
 
         _ = gui.guiButton(rl.Rectangle{ .height = height, .width = width, .x = center - width / 2, .y = height * 6 }, resolutions[curRes]);
@@ -190,6 +191,9 @@ pub fn loadMenu() bool {
             game.setWindowSizeFromVector(resolutionVecs[curRes]);
         }
         gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 64));
+        //GO BACK BUTTON
+        const backButton = gui.guiButton(rl.Rectangle{ .height = height / 2, .width = width / 2, .x = center - width / 4, .y = height * 7.5 }, "Go Back");
+        if (backButton == 1) currentMenu = menuType.main;
     }
     if (currentMenu == menuType.levelSelect) {
         var i: i32 = 0;
