@@ -23,6 +23,9 @@ pub var body_textures: [4]rl.Texture2D = undefined;
 var bloomShader: rl.Shader = undefined;
 var pixelShader: rl.Shader = undefined;
 var finePixelShader: rl.Shader = undefined;
+var sizeLoc: i32 = undefined;
+var renderWidthLoc: i32 = undefined;
+var renderHeightLoc: i32 = undefined;
 
 pub var boxSize: i32 = 1920 / 16;
 pub fn runGame() !void {
@@ -47,6 +50,10 @@ pub fn runGame() !void {
     bloomShader = rl.loadShader(null, "resources/shaders/bloom.fs");
     pixelShader = rl.loadShader(null, "resources/shaders/pixel.fs");
     finePixelShader = rl.loadShader(null, "resources/shaders/pixel_fine.fs");
+
+    sizeLoc = rl.getShaderLocation(pixelShader, "size");
+    renderWidthLoc = rl.getShaderLocation(pixelShader, "renderWidth");
+    renderHeightLoc = rl.getShaderLocation(pixelShader, "renderHeight");
 
     backgroundTexture = rl.loadRenderTexture(1920, 1080);
     waterTexture = rl.loadRenderTexture(1920, 1080);
@@ -156,6 +163,11 @@ fn drawSky(cloud_t: rl.Texture2D) void {
 
     rl.endTextureMode();
 
+    const resolution = [2]f32{ @floatFromInt(rl.getScreenWidth()), @floatFromInt(rl.getScreenHeight()) };
+    rl.setShaderValue(pixelShader, sizeLoc, &resolution, rl.ShaderUniformDataType.vec2);
+    rl.setShaderValue(pixelShader, renderWidthLoc, &@as(f32, @floatFromInt(rl.getScreenWidth())), rl.ShaderUniformDataType.float);
+    rl.setShaderValue(pixelShader, renderHeightLoc, &@as(f32, @floatFromInt(rl.getScreenHeight())), rl.ShaderUniformDataType.float);
+
     //RENDER THE TEXTURE WITH THE SHADER
     rl.beginShaderMode(pixelShader);
     rl.drawTextureRec(backgroundTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(backgroundTexture.texture.width), .height = -@as(f32, @floatFromInt(backgroundTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.white);
@@ -226,21 +238,20 @@ pub fn drawTextureNew(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color,
     rl.drawTexturePro(texture, source, dest, origin, rotation, tint);
 }
 fn drawWater() void {
-    const time: f32 = @floatCast(rl.getTime());
+    const time: f32 = @floatCast(rl.getTime() / 2);
     const screenWidth: f32 = @as(f32, @floatFromInt(rl.getScreenWidth()));
     const screenHeight: f32 = @as(f32, @floatFromInt(rl.getScreenHeight()));
-
-    // Wave parameters - all scaled to screen dimensions
+    //Parameters
     const waveLength: f32 = screenWidth / 2.5;
-    const amplitude1: f32 = screenHeight * 0.01; // 18.0 scaled to ~2.5% of screen height
-    const amplitude2: f32 = screenHeight * 0.01; // 11.0 scaled to ~1.5% of screen height
-    const baseOffset1: f32 = screenHeight * 0.026; // 40.0 scaled to ~5.6% of screen height
-    const baseOffset2: f32 = -screenHeight * 0.021; // -15.0 scaled to ~-2.1% of screen height
+    const amplitude1: f32 = screenHeight * 0.01;
+    const amplitude2: f32 = screenHeight * 0.01;
+    const baseOffset1: f32 = screenHeight * 0.026;
+    const baseOffset2: f32 = -screenHeight * 0.021;
 
-    const heightVariation1: f32 = std.math.sin(time * 0.3) * screenHeight * 0.011; // 8.0 scaled to ~1.1% of screen height
-    const heightVariation2: f32 = std.math.cos(time * 0.4) * screenHeight * 0.0083; // 6.0 scaled to ~0.83% of screen height
+    const heightVariation1: f32 = std.math.sin(time * 0.3) * screenHeight * 0.011;
+    const heightVariation2: f32 = std.math.cos(time * 0.4) * screenHeight * 0.0083;
 
-    const segmentCount: i32 = 3; // Number of segments to draw smooth waves
+    const segmentCount: i32 = 3;
 
     rl.beginTextureMode(waterTexture);
     rl.clearBackground(rl.Color.init(0, 0, 0, 0));
@@ -270,7 +281,7 @@ fn drawWater() void {
     rl.endTextureMode();
 
     rl.beginShaderMode(finePixelShader);
-    rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.white);
+    rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.init(255, 255, 255, 255));
     rl.endShaderMode();
 }
 fn fullScreen() void {
