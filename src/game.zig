@@ -5,6 +5,7 @@ const gui = @import("raygui");
 const player = @import("player.zig");
 const levelManager = @import("maps/levelManager.zig");
 const levelEditor = @import("maps/levelEditor.zig");
+const builtin = @import("builtin");
 
 pub const blockType = enum(i32) { sol = 0, bdy = 1, frt = 2, vic = 3, air = 4, spk = 5, null = -1 };
 const sol = blockType.sol;
@@ -169,7 +170,9 @@ fn drawSky(cloud_t: rl.Texture2D) void {
     rl.setShaderValue(pixelShader, renderHeightLoc, &@as(f32, @floatFromInt(rl.getScreenHeight())), rl.ShaderUniformDataType.float);
 
     //RENDER THE TEXTURE WITH THE SHADER
-    rl.beginShaderMode(pixelShader);
+    if (builtin.target.os.tag != .emscripten) {
+        rl.beginShaderMode(pixelShader);
+    }
     rl.drawTextureRec(backgroundTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(backgroundTexture.texture.width), .height = -@as(f32, @floatFromInt(backgroundTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.white);
     rl.endShaderMode();
 }
@@ -279,8 +282,9 @@ fn drawWater() void {
         rl.drawLineBezier(rl.Vector2.init(x1, y1), rl.Vector2.init(x2, y2), @floatFromInt(boxSize), Color.dark_blue);
     }
     rl.endTextureMode();
-
-    rl.beginShaderMode(finePixelShader);
+    if (builtin.target.os.tag != .emscripten) {
+        rl.beginShaderMode(finePixelShader);
+    }
     rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.init(255, 255, 255, 255));
     rl.endShaderMode();
 }
