@@ -158,6 +158,7 @@ pub fn loadMenu() bool {
 
         if (levelSelect_button == 1) {
             currentMenu = menuType.levelSelect;
+            return true;
         }
         if (levelEditor_button == 1) {
             currentMenu = menuType.levelEditor;
@@ -196,6 +197,9 @@ pub fn loadMenu() bool {
         if (backButton == 1) currentMenu = menuType.main;
     }
     if (currentMenu == menuType.levelSelect) {
+        if (checkPause()) {
+            return true;
+        }
         var i: i32 = 0;
         while (i < maxLevelUnlocked + 1) {
             const max_len = 20;
