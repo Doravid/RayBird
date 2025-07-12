@@ -88,7 +88,6 @@ pub fn loadLevelFromJson(name: u32) level {
     }
 
     defer if (should_free_json) alloc.free(jsonData);
-    std.log.err("JSON data length: {}, first 100 chars: {s}\n", .{ jsonData.len, jsonData[0..@min(100, jsonData.len)] });
     const result = std.json.parseFromSlice(level, alloc, jsonData, .{
         .ignore_unknown_fields = true,
     }) catch |err| {
@@ -105,6 +104,7 @@ var currentLevelNumber: usize = 0;
 pub fn setLevel(levelNumber: u32) void {
     player.clearPlayer();
     const levelA = loadLevelFromJson(levelNumber);
+    std.debug.print("Level Num {}, {}", .{ levelNumber, levelA });
     currentLevelNumber = levelNumber;
     if (levelNumber > maxLevelUnlocked) {
         maxLevelUnlocked = levelNumber - 1;
@@ -117,6 +117,7 @@ pub fn setLevel(levelNumber: u32) void {
         };
     }
     player.mat16x9 = levelA.map;
+    player.fruitNumber = player.numFruit();
 }
 
 pub fn getCurrentLevelNum() usize {

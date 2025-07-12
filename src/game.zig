@@ -305,6 +305,9 @@ pub fn posMoveable(x: f32, y: f32) bool {
 }
 pub fn posMoveableWorldGrid(x: i32, y: i32) bool {
     const blk = getBlockWorldGrid(x, y);
+    if (blk == vic and player.fruitNumber > 0) {
+        return false;
+    }
     if (blk == air or blk == frt or blk == vic or blk == spk) {
         return true;
     }

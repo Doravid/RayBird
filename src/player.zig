@@ -12,7 +12,6 @@ const direction = enum { up, down, left, right };
 var movementLocked = false;
 var canFall = false;
 //Current Map State.
-
 pub var mat16x9 = [9][16]blockType{
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
@@ -24,7 +23,7 @@ pub var mat16x9 = [9][16]blockType{
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
 };
-
+pub var fruitNumber: i32 = 0;
 //Player history!
 pub var undoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.c_allocator);
@@ -34,7 +33,17 @@ pub var redoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_a
 //Player body.
 //0 is always the head, body.items.len is always the floating tail (The square right behind the tail. )
 pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
-
+pub fn numFruit() i32 {
+    var numberOfFruit: i32 = 0;
+    for (mat16x9) |map| {
+        for (map) |block| {
+            if (block == game.blockType.frt) {
+                numberOfFruit += 1;
+            }
+        }
+    }
+    return numberOfFruit;
+}
 //Moves the player and adds their previous position to player history. (If the move is valid ofc)
 pub fn updatePos() void {
     if (rl.isKeyPressed(rl.KeyboardKey.r)) {
@@ -153,11 +162,14 @@ fn movePlayer(dir: direction) void {
     const newHead = game.getBlockWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y));
     if (newHead == blockType.vic) {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
+        return;
     }
     if (newHead == blockType.spk) {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
+        return;
     }
     if (newHead == blockType.frt) {
+        fruitNumber -= 1;
         body.append(tail) catch |err| {
             std.debug.print("Failed to append body position: {}\n", .{err});
             return;
@@ -177,7 +189,6 @@ pub fn updateGravity() void {
         i -= 1;
         const block = game.getBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y + 1));
         if (block == sol or block == frt) {
-            std.log.info("block: {} at {}, {}", .{ block, @as(i32, @intFromFloat(body.items[i].x)), @as(i32, @intFromFloat(body.items[i].y)) });
             canFall = false;
             movementLocked = false;
             break;
@@ -238,6 +249,7 @@ pub fn drawPlayer(textures: []const rl.Texture, custom_body: ?std.ArrayList(rl.V
 }
 pub fn clearPlayer() void {
     body.clearAndFree();
+    clearPlayerAndMap();
     undoHistory.clearAndFree();
     redoHistory.clearAndFree();
     mapHistory.clearAndFree();
