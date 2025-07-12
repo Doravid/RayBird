@@ -34,7 +34,7 @@ pub fn runGame() !void {
     // try sounds.append(rl.loadSound("resources/audio/move2.mp3"));
 
     // const box = rl.loadImage("resources/box.png");
-    const plat = rl.loadImage("resources/dirt.png");
+    const plat = rl.loadImage("resources/dirt1.png");
     const plat2 = rl.loadImage("resources/dirt2.png");
     const grass = rl.loadImage("resources/grass.png");
     const fruit = rl.loadImage("resources/fruit.png");
@@ -208,7 +208,7 @@ fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit
             switch (element) {
                 sol => drawDirt(grass_t, plat_t, plat2_t, boxSize * rw, col * boxSize, rl.Color.white),
                 vic => drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
-                frt => drawTexture(fruit_t, boxSize * rw, col * boxSize, rl.Color.white),
+                frt => drawFruit(fruit_t, boxSize * rw, col * boxSize),
                 spk => drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
                 //bdy => drawTexture(box_t, boxSize * rw, col * boxSize, rl.Color.white),
                 else => undefined,
@@ -216,13 +216,30 @@ fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit
         }
     }
 }
+fn drawFruit(fruit_t: rl.Texture, posX: i32, posY: i32) void {
+    const time: f32 = @floatCast(rl.getTime());
+    const sinTime = std.math.sin(time);
+    const offset: i32 = @intFromFloat((sinTime * @as(f32, @floatFromInt(boxSize))) * 0.06);
+    drawTexture(fruit_t, posX, posY + offset, rl.Color.white);
+}
 fn drawDirt(grass_t: rl.Texture, plat_t: rl.Texture, plat2_t: rl.Texture, posX: i32, posY: i32, color: rl.Color) void {
     if (getBlockAt(@floatFromInt(posX), @floatFromInt(posY - boxSize)) != sol) {
         drawTexture(grass_t, posX, posY, color);
-    } else if (@mod(posX, boxSize * 3) == 0 or @mod(posY, boxSize * 4) == 0) {
-        drawTexture(plat_t, posX, posY, color);
     } else {
-        drawTexture(plat2_t, posX, posY, color);
+        var hash = @as(u32, @bitCast(posX));
+        hash = hash ^ (@as(u32, @bitCast(posY)) << 16);
+        hash = hash ^ (hash >> 13);
+        hash = hash *% 0x5bd1e995;
+        hash = hash ^ (hash >> 15);
+        hash = hash *% 0x27d4eb2d;
+        hash = hash ^ (hash >> 16);
+        const random_value = hash % 100;
+
+        if (random_value < 50) {
+            drawTexture(plat2_t, posX, posY, color);
+        } else {
+            drawTexture(plat_t, posX, posY, color);
+        }
     }
 }
 pub fn drawTexture(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color) void {
