@@ -306,7 +306,7 @@ fn drawWater() void {
     rl.endShaderMode();
 }
 fn fullScreen() void {
-    if (rl.isKeyPressed(rl.KeyboardKey.f11)) {
+    if (rl.isKeyPressed(rl.KeyboardKey.f11) or rl.isKeyPressed(rl.KeyboardKey.f)) {
         rl.toggleFullscreen();
         return;
     }

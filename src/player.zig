@@ -226,6 +226,15 @@ pub fn updateGravity() void {
             game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), bdy);
         }
     }
+    if (!canFall) {
+        i = body.items.len;
+        while (i > 0) {
+            i -= 1;
+            if (@mod(body.items[i].y, @as(f32, @floatFromInt(game.boxSize))) > 0) {
+                body.items[i].y = @floatFromInt(@as(i32, @intFromFloat(body.items[i].y)));
+            }
+        }
+    }
 }
 fn fall() void {
     var i: usize = body.items.len;
