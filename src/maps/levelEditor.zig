@@ -13,6 +13,7 @@ const air = blockType.air;
 const spk = blockType.spk;
 const bdy = blockType.bdy;
 const frt = blockType.frt;
+const box = blockType.box;
 pub var currentBlock: blockType = sol;
 var waitingOnInput = false;
 
@@ -83,7 +84,7 @@ pub fn loadLevelEditor() void {
             }
         }
     }
-    const numBlocks: comptime_int = 6;
+    const numBlocks: comptime_int = 7;
     if (rl.getMouseWheelMove() > 0) {
         currentBlock = @enumFromInt(@mod(@intFromEnum(currentBlock) + 1, numBlocks));
     } else if (rl.getMouseWheelMove() < 0) {

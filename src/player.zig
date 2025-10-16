@@ -8,9 +8,10 @@ const air = blockType.air;
 const spk = blockType.spk;
 const bdy = blockType.bdy;
 const frt = blockType.frt;
-const direction = enum { up, down, left, right };
+pub const direction = enum { up, down, left, right };
 var movementLocked = false;
 var canFall = false;
+
 //Current Map State.
 pub var mat16x9 = [9][16]blockType{
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
@@ -60,22 +61,22 @@ pub fn updatePos() void {
 
     if ((rl.isKeyPressed(rl.KeyboardKey.w) or (rl.isKeyPressed(rl.KeyboardKey.up))) and (body.items[0].y) - 1 >= 0) {
         std.debug.print("{}", .{body.items[0].y});
-        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y - 1))) {
+        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y - 1), direction.up)) {
             movePlayer(direction.up);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.a) or (rl.isKeyPressed(rl.KeyboardKey.left))) and body.items[0].x - 1 >= 0) {
-        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x - 1), @intFromFloat(body.items[0].y))) {
+        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x - 1), @intFromFloat(body.items[0].y), direction.left)) {
             movePlayer(direction.left);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.s) or (rl.isKeyPressed(rl.KeyboardKey.down))) and body.items[0].y + 1 < 9) {
-        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y + 1))) {
+        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y + 1), direction.down)) {
             movePlayer(direction.down);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.d) or (rl.isKeyPressed(rl.KeyboardKey.right))) and body.items[0].x + 1 < 16) {
-        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x + 1), @intFromFloat(body.items[0].y))) {
+        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x + 1), @intFromFloat(body.items[0].y), direction.right)) {
             movePlayer(direction.right);
         }
     }

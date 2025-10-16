@@ -7,13 +7,14 @@ const levelManager = @import("maps/levelManager.zig");
 const levelEditor = @import("maps/levelEditor.zig");
 const builtin = @import("builtin");
 
-pub const blockType = enum(i32) { sol = 0, bdy = 1, frt = 2, vic = 3, air = 4, spk = 5, null = -1 };
+pub const blockType = enum(i32) { sol = 0, bdy = 1, frt = 2, vic = 3, air = 4, spk = 5, box = 6, null = -1 };
 const sol = blockType.sol;
 const air = blockType.air;
 const spk = blockType.spk;
 const bdy = blockType.bdy;
 const frt = blockType.frt;
 const vic = blockType.vic;
+const box = blockType.box;
 const Color = rl.Color;
 const KeyboardKey = rl.KeyboardKey;
 var backgroundTexture: rl.RenderTexture = undefined;
@@ -33,7 +34,7 @@ pub fn runGame() !void {
     // try sounds.append(rl.loadSound("resources/audio/move.mp3"));
     // try sounds.append(rl.loadSound("resources/audio/move2.mp3"));
 
-    // const box = rl.loadImage("resources/box.png");
+    const move = rl.loadImage("resources/box.png");
     const plat = rl.loadImage("resources/dirt1.png");
     const plat2 = rl.loadImage("resources/dirt2.png");
     const grass = rl.loadImage("resources/grass.png");
@@ -59,7 +60,7 @@ pub fn runGame() !void {
     backgroundTexture = rl.loadRenderTexture(1920, 1080);
     waterTexture = rl.loadRenderTexture(1920, 1080);
 
-    // const box_t = rl.loadTextureFromImage(box);
+    const move_t = rl.loadTextureFromImage(move);
     const plat_t = rl.loadTextureFromImage(plat);
     const plat2_t = rl.loadTextureFromImage(plat2);
     const grass_t = rl.loadTextureFromImage(grass);
@@ -76,7 +77,7 @@ pub fn runGame() !void {
 
     body_textures = [_]rl.Texture2D{ body1_t, body2_t, body3_t, body4_t };
 
-    // defer rl.unloadImage(box);
+    defer rl.unloadImage(move);
     defer rl.unloadImage(plat);
     defer rl.unloadImage(plat2);
     defer rl.unloadImage(fruit);
@@ -113,7 +114,7 @@ pub fn runGame() !void {
 
             inMenus = levelManager.loadMenu();
         } else {
-            drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, grass_t);
+            drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, grass_t, move_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
                     sol => plat_t,
@@ -122,6 +123,7 @@ pub fn runGame() !void {
                     air => del_t,
                     vic => victory_t,
                     spk => spike_t,
+                    box => move_t,
                     else => undefined,
                 };
                 rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(rl.getScreenWidth() - @divTrunc(boxSize, 4) * 3)), .y = @as(f32, @floatFromInt(boxSize)) / 4, .height = @as(f32, @floatFromInt(boxSize)) / 2, .width = @as(f32, @floatFromInt(boxSize)) / 2 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
@@ -200,7 +202,7 @@ pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Co
     }
 }
 //Draws all of the boxes in the map each frame.
-fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, grass_t: rl.Texture) void {
+fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, grass_t: rl.Texture, move_t: rl.Texture) void {
     for (player.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             const rw: i32 = @intCast(cIndex);
@@ -210,7 +212,7 @@ fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit
                 vic => drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
                 frt => drawFruit(fruit_t, boxSize * rw, col * boxSize),
                 spk => drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
-                //bdy => drawTexture(box_t, boxSize * rw, col * boxSize, rl.Color.white),
+                box => drawTexture(move_t, boxSize * rw, col * boxSize, rl.Color.white),
                 else => undefined,
             }
         }
@@ -320,8 +322,16 @@ pub fn posMoveable(x: f32, y: f32) bool {
     }
     return false;
 }
-pub fn posMoveableWorldGrid(x: i32, y: i32) bool {
+pub fn posMoveableWorldGrid(x: i32, y: i32, direction: player.direction) bool {
     const blk = getBlockWorldGrid(x, y);
+    if (blk == box) {
+        switch (direction) {
+            player.direction.up => return (posMoveableWorldGrid(x, y - 1, direction)),
+            player.direction.down => return (posMoveableWorldGrid(x, y + 1, direction)),
+            player.direction.left => return (posMoveableWorldGrid(x - 1, y, direction)),
+            player.direction.right => return (posMoveableWorldGrid(x + 1, y, direction)),
+        }
+    }
     if (blk == vic and player.fruitNumber > 0) {
         return false;
     }
