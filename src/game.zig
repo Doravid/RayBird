@@ -100,6 +100,7 @@ pub fn runGame() !void {
     while (!rl.windowShouldClose()) { // Detect window close button or DEL key
         // Update
         player.updateGravity();
+        boxes.updateBoxGravity();
         player.updatePos();
         fullScreen();
 
@@ -115,7 +116,7 @@ pub fn runGame() !void {
 
             inMenus = levelManager.loadMenu();
         } else {
-            drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, grass_t, move_t);
+            drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, grass_t);
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
                     sol => plat_t,
@@ -132,6 +133,7 @@ pub fn runGame() !void {
                 drawWater();
             }
             player.drawPlayer(&body_textures, null);
+            boxes.drawBoxes(move_t);
             inMenus = levelManager.checkPause();
             drawWater();
         }
@@ -204,7 +206,7 @@ pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Co
     }
 }
 //Draws all of the boxes in the map each frame.
-fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, grass_t: rl.Texture, move_t: rl.Texture) void {
+fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, grass_t: rl.Texture) void {
     for (levelManager.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             const rw: i32 = @intCast(cIndex);
@@ -214,7 +216,7 @@ fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit
                 vic => drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
                 frt => drawFruit(fruit_t, boxSize * rw, col * boxSize),
                 spk => drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
-                box => drawTexture(move_t, boxSize * rw, col * boxSize, rl.Color.white),
+                // box => drawTexture(move_t, boxSize * rw, col * boxSize, rl.Color.white),
                 else => undefined,
             }
         }
@@ -385,13 +387,7 @@ pub fn setBlockWorldGrid(x: f32, y: f32, block: blockType) void {
     }
     levelManager.mat16x9[@intFromFloat(y)][@intFromFloat(x)] = block;
 }
-// pub fn setBlockWorldGrid(x: f32, y: f32, block: blockType) void {
-//     if (x >= 16 or y >= 9 or x < 0 or y < 0) {
-//         std.debug.print("Out of bounds\n", .{});
-//         return;
-//     }
-//     levelManager.mat16x9[@intCast(y)][@intCast(x)] = block;
-// }
+
 pub fn setWindowSizeFromVector(ScreenSize: rl.Vector2) void {
     rl.setWindowSize(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
     boxSize = @divExact(rl.getScreenWidth(), 16);

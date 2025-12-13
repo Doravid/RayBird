@@ -171,7 +171,6 @@ fn movePlayer(dir: direction) void {
         game.setBlockWorldGrid((tail.x), (tail.y), air);
     }
     if (body.items.len > 0) game.setBlockWorldGrid((body.items[0].x), (body.items[0].y), bdy);
-    updateGravity();
 }
 pub fn updateGravity() void {
     var i: usize = body.items.len;
@@ -181,10 +180,18 @@ pub fn updateGravity() void {
     while (i > 0) {
         i -= 1;
         const block = game.getBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y + 1));
-        if (block == sol or block == frt or block == box) {
+        if (block == sol or block == frt) {
             canFall = false;
             movementLocked = false;
             break;
+        }
+        if (block == box) {
+            const boxCanFall = boxes.canMoveBox(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y + 1), direction.down);
+            if (!boxCanFall) {
+                canFall = false;
+                movementLocked = false;
+                break;
+            }
         }
         if (block == blockType.null) {
             levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
@@ -202,13 +209,11 @@ pub fn updateGravity() void {
         i = body.items.len;
         while (i > 0) {
             i -= 1;
-
             const block = game.getBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y + 1));
             if (block == blockType.vic) {
                 levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
                 break;
             }
-
             game.setBlockWorldGrid((body.items[i].x), (body.items[i].y), air);
         }
         fall();
@@ -252,6 +257,7 @@ pub fn drawPlayer(textures: []const rl.Texture, custom_body: ?std.ArrayList(rl.V
 pub fn clearPlayer() void {
     body.clearAndFree();
     clearPlayerAndMap();
+    boxes.clearBoxes();
     undoHistory.clearAndFree();
     redoHistory.clearAndFree();
     mapHistory.clearAndFree();
@@ -271,4 +277,5 @@ pub fn clearPlayerAndMap() void {
         [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     };
     body.clearAndFree();
+    boxes.clearBoxes();
 }
