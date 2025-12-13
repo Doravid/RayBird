@@ -349,7 +349,7 @@ pub fn posMoveable(x: i32, y: i32, direction: player.direction) bool {
                 std.debug.print("im done hiding now im\n", .{});
 
                 const twoAwayGroup = boxes.boxGroupAtCoord(twoAway) catch break :check_groups;
-                std.debug.print("shining like im supossed tooo bbeeeeeee\n", .{});
+                std.debug.print("shining like im BORN tooo bbeeeeeee\n", .{});
                 std.debug.print("ptr1 {*} ptr2 {*} ", .{ currentGroup.items.ptr, twoAwayGroup.items.ptr });
                 if (currentGroup.items.ptr == twoAwayGroup.items.ptr) return false;
             }
