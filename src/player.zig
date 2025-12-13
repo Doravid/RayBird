@@ -1,4 +1,5 @@
 const game = @import("game.zig");
+const boxes = @import("boxes.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const levelManager = @import("maps/levelManager.zig");
@@ -8,22 +9,11 @@ const air = blockType.air;
 const spk = blockType.spk;
 const bdy = blockType.bdy;
 const frt = blockType.frt;
+const box = blockType.box;
 pub const direction = enum { up, down, left, right };
 var movementLocked = false;
 var canFall = false;
 
-//Current Map State.
-pub var mat16x9 = [9][16]blockType{
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-};
 pub var fruitNumber: i32 = 0;
 //Player history!
 pub var undoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
@@ -36,7 +26,7 @@ pub var redoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_a
 pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
 pub fn numFruit() i32 {
     var numberOfFruit: i32 = 0;
-    for (mat16x9) |map| {
+    for (levelManager.mat16x9) |map| {
         for (map) |block| {
             if (block == game.blockType.frt) {
                 numberOfFruit += 1;
@@ -60,23 +50,22 @@ pub fn updatePos() void {
     }
 
     if ((rl.isKeyPressed(rl.KeyboardKey.w) or (rl.isKeyPressed(rl.KeyboardKey.up))) and (body.items[0].y) - 1 >= 0) {
-        std.debug.print("{}", .{body.items[0].y});
-        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y - 1), direction.up)) {
+        if (game.posMoveable(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y - 1), direction.up)) {
             movePlayer(direction.up);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.a) or (rl.isKeyPressed(rl.KeyboardKey.left))) and body.items[0].x - 1 >= 0) {
-        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x - 1), @intFromFloat(body.items[0].y), direction.left)) {
+        if (game.posMoveable(@intFromFloat(body.items[0].x - 1), @intFromFloat(body.items[0].y), direction.left)) {
             movePlayer(direction.left);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.s) or (rl.isKeyPressed(rl.KeyboardKey.down))) and body.items[0].y + 1 < 9) {
-        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y + 1), direction.down)) {
+        if (game.posMoveable(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y + 1), direction.down)) {
             movePlayer(direction.down);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.d) or (rl.isKeyPressed(rl.KeyboardKey.right))) and body.items[0].x + 1 < 16) {
-        if (game.posMoveableWorldGrid(@intFromFloat(body.items[0].x + 1), @intFromFloat(body.items[0].y), direction.right)) {
+        if (game.posMoveable(@intFromFloat(body.items[0].x + 1), @intFromFloat(body.items[0].y), direction.right)) {
             movePlayer(direction.right);
         }
     }
@@ -93,14 +82,14 @@ fn undo() void {
     };
     body = undoHistory.pop();
 
-    mat16x9 = mapHistory.pop();
+    levelManager.mat16x9 = mapHistory.pop();
 }
 
 fn redo() void {
     if (redoHistory.items.len <= 0) return;
     var i: usize = 0;
     while (i < body.items.len) {
-        game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), air);
+        game.setBlockWorldGrid(body.items[i].x, body.items[i].y, air);
         i += 1;
     }
     const clone = body.clone() catch |err| {
@@ -111,21 +100,20 @@ fn redo() void {
         std.debug.print("Failed to append undo position: {}\n", .{err});
         return;
     };
-    mapHistory.append(mat16x9) catch |err| {
+    mapHistory.append(levelManager.mat16x9) catch |err| {
         std.debug.print("Failed to append map history: {}\n", .{err});
         return;
     };
     body = redoHistory.pop();
     i = 0;
     while (i < body.items.len) {
-        game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), bdy);
+        game.setBlockWorldGrid((body.items[i].x), (body.items[i].y), bdy);
         i += 1;
     }
 }
 fn movePlayer(dir: direction) void {
     redoHistory.clearAndFree();
-    // const sound = rl.getRandomValue(0, 1);
-    // rl.playSound(game.sounds.items[@intCast(sound)]);
+
     const clone = body.clone() catch |err| {
         std.debug.print("Failed to clone body: {}\n", .{err});
         return;
@@ -134,7 +122,7 @@ fn movePlayer(dir: direction) void {
         std.debug.print("Failed to append undo history: {}\n", .{err});
         return;
     };
-    mapHistory.append(mat16x9) catch |err| {
+    mapHistory.append(levelManager.mat16x9) catch |err| {
         std.debug.print("Failed to append map history: {}\n", .{err});
         return;
     };
@@ -158,9 +146,10 @@ fn movePlayer(dir: direction) void {
             body.items[0].y += 1;
         },
     }
-    std.log.debug("body x / y {} {}", .{ @as(i32, @intFromFloat(body.items[0].x)), @as(i32, @intFromFloat(body.items[0].y)) });
+    std.log.info("body x / y {} {}", .{ @as(i32, @intFromFloat(body.items[0].x)), @as(i32, @intFromFloat(body.items[0].y)) });
 
     const newHead = game.getBlockWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y));
+
     if (newHead == blockType.vic) {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
         return;
@@ -169,6 +158,9 @@ fn movePlayer(dir: direction) void {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
         return;
     }
+    if (newHead == blockType.box) {
+        boxes.movePos(body.items[0], dir);
+    }
     if (newHead == blockType.frt) {
         fruitNumber -= 1;
         body.append(tail) catch |err| {
@@ -176,9 +168,9 @@ fn movePlayer(dir: direction) void {
             return;
         };
     } else {
-        game.setBlockWorldGrid(@intFromFloat(tail.x), @intFromFloat(tail.y), air);
+        game.setBlockWorldGrid((tail.x), (tail.y), air);
     }
-    if (body.items.len > 0) game.setBlockWorldGrid(@intFromFloat(body.items[0].x), @intFromFloat(body.items[0].y), bdy);
+    if (body.items.len > 0) game.setBlockWorldGrid((body.items[0].x), (body.items[0].y), bdy);
     updateGravity();
 }
 pub fn updateGravity() void {
@@ -189,7 +181,7 @@ pub fn updateGravity() void {
     while (i > 0) {
         i -= 1;
         const block = game.getBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y + 1));
-        if (block == sol or block == frt) {
+        if (block == sol or block == frt or block == box) {
             canFall = false;
             movementLocked = false;
             break;
@@ -217,14 +209,14 @@ pub fn updateGravity() void {
                 break;
             }
 
-            game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), air);
+            game.setBlockWorldGrid((body.items[i].x), (body.items[i].y), air);
         }
         fall();
     } else if (game.getBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y)) == air) {
         i = body.items.len;
         while (i > 0) {
             i -= 1;
-            game.setBlockWorldGrid(@intFromFloat(body.items[i].x), @intFromFloat(body.items[i].y), bdy);
+            game.setBlockWorldGrid((body.items[i].x), (body.items[i].y), bdy);
         }
     }
     if (!canFall) {
@@ -267,7 +259,7 @@ pub fn clearPlayer() void {
     canFall = false;
 }
 pub fn clearPlayerAndMap() void {
-    mat16x9 = [9][16]blockType{
+    levelManager.mat16x9 = [9][16]blockType{
         [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
         [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
         [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },

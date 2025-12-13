@@ -1,4 +1,5 @@
 const game = @import("../game.zig");
+const boxes = @import("../boxes.zig");
 const player = @import("../player.zig");
 const rl = @import("raylib");
 const gui = @import("raygui");
@@ -29,10 +30,10 @@ pub const emptyMap = [9][16]blockType{
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
 };
 pub fn initLevelEditor() void {
-    player.mat16x9 = emptyMap;
+    levelManager.mat16x9 = emptyMap;
 }
 pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
-
+var curBoxGroupNumber: usize = 0;
 var userInput: [64:0]u8 = undefined;
 var view: bool = true;
 
@@ -41,11 +42,12 @@ pub fn loadLevelEditor() void {
     if (!waitingOnInput and (rl.isKeyDown(rl.KeyboardKey.left_control) and rl.isKeyDown(rl.KeyboardKey.s))) {
         waitingOnInput = true;
     }
+
     if (rl.isMouseButtonPressed(rl.MouseButton.left) and !waitingOnInput) {
         const pos = rl.getMousePosition();
         std.debug.print("x: {}, y: {} \n", .{ pos.x, pos.y });
         const replacedBlock = game.getBlockAt(pos.x, pos.y);
-        if (currentBlock != bdy) game.setBlockAt(pos.x, pos.y, currentBlock);
+        if (currentBlock != bdy and currentBlock != box) game.setBlockAt(pos.x, pos.y, currentBlock);
 
         if (currentBlock == bdy and replacedBlock != bdy) {
             const x: i32 = @divTrunc(@as(i32, @intFromFloat(pos.x)), game.boxSize);
@@ -62,6 +64,25 @@ pub fn loadLevelEditor() void {
                 game.setBlockAt((pos.x), (pos.y), currentBlock);
             }
         }
+
+        if (currentBlock == box and replacedBlock != box) {
+            const x: i32 = @divTrunc(@as(i32, @intFromFloat(pos.x)), game.boxSize);
+            const y: i32 = @divTrunc(@as(i32, @intFromFloat(pos.y)), game.boxSize);
+            if (boxes.boxList.items.len == 0) {
+                const boxGroup = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
+                boxes.boxList.append(boxGroup) catch |err| {
+                    std.debug.print("Failed to append to box: {}\n", .{err});
+                    return;
+                };
+            }
+            var boxGroup: *std.ArrayList(rl.Vector2) = &boxes.boxList.items.ptr[curBoxGroupNumber];
+
+            boxGroup.append(rl.Vector2{ .x = @as(f32, @floatFromInt(x)), .y = @as(f32, @floatFromInt(y)) }) catch |err| {
+                std.debug.print("Failed to append to box: {}\n", .{err});
+                return;
+            };
+            game.setBlockAt((pos.x), (pos.y), currentBlock);
+        }
     }
 
     if (waitingOnInput) {
@@ -70,7 +91,19 @@ pub fn loadLevelEditor() void {
         var i: usize = 0;
         if (res == 1) {
             waitingOnInput = false;
-            writeLevelToFile(levelManager.level{ .map = player.mat16x9, .player = body.items }, userInput);
+            var tempBoxes = std.ArrayList([]rl.Vector2).init(std.heap.c_allocator);
+            defer tempBoxes.deinit();
+
+            for (boxes.boxList.items) |group| {
+                tempBoxes.append(group.items) catch return;
+            }
+
+            const levelData = levelManager.level{
+                .map = levelManager.mat16x9,
+                .player = body.items,
+                .boxes = tempBoxes.items,
+            };
+            writeLevelToFile(levelData, userInput);
             while (i < 64) {
                 userInput[i] = 0;
                 i += 1;

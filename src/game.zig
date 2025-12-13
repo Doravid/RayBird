@@ -3,6 +3,7 @@ const rl = @import("raylib");
 const std = @import("std");
 const gui = @import("raygui");
 const player = @import("player.zig");
+const boxes = @import("boxes.zig");
 const levelManager = @import("maps/levelManager.zig");
 const levelEditor = @import("maps/levelEditor.zig");
 const builtin = @import("builtin");
@@ -134,6 +135,7 @@ pub fn runGame() !void {
             inMenus = levelManager.checkPause();
             drawWater();
         }
+        rl.drawFPS(2, 2);
     }
 }
 fn drawSky(cloud_t: rl.Texture2D) void {
@@ -203,7 +205,7 @@ pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Co
 }
 //Draws all of the boxes in the map each frame.
 fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, grass_t: rl.Texture, move_t: rl.Texture) void {
-    for (player.mat16x9, 0..) |row, rIndex| {
+    for (levelManager.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
             const rw: i32 = @intCast(cIndex);
             const col: i32 = @intCast(rIndex);
@@ -313,24 +315,33 @@ fn fullScreen() void {
         return;
     }
 }
-
-//Cehcks if a given position is a valid location for the player to move.
-pub fn posMoveable(x: f32, y: f32) bool {
-    const blk = getBlockAt(x, y);
-    if (blk == air or blk == frt or blk == vic or blk == spk) {
-        return true;
+pub fn directionToVec2(dir: player.direction) rl.Vector2 {
+    std.debug.print("dir {}", .{dir});
+    switch (dir) {
+        player.direction.up => {
+            return rl.Vector2{ .x = 0, .y = -1 };
+        },
+        player.direction.down => {
+            return rl.Vector2{ .x = 0, .y = 1 };
+        },
+        player.direction.left => {
+            return rl.Vector2{ .x = -1, .y = 0 };
+        },
+        player.direction.right => {
+            return rl.Vector2{ .x = 1, .y = 0 };
+        },
     }
-    return false;
 }
-pub fn posMoveableWorldGrid(x: i32, y: i32, direction: player.direction) bool {
+pub fn posMoveable(x: i32, y: i32, direction: player.direction) bool {
     const blk = getBlockWorldGrid(x, y);
     if (blk == box) {
-        switch (direction) {
-            player.direction.up => return (posMoveableWorldGrid(x, y - 1, direction)),
-            player.direction.down => return (posMoveableWorldGrid(x, y + 1, direction)),
-            player.direction.left => return (posMoveableWorldGrid(x - 1, y, direction)),
-            player.direction.right => return (posMoveableWorldGrid(x + 1, y, direction)),
-        }
+        return boxes.canMoveBox(x, y, direction);
+        // switch (direction) {
+        //     player.direction.up => return (posMoveable(x, y - 1, direction)),
+        //     player.direction.down => return (posMoveable(x, y + 1, direction)),
+        //     player.direction.left => return (posMoveable(x - 1, y, direction)),
+        //     player.direction.right => return (posMoveable(x + 1, y, direction)),
+        // }
     }
     if (blk == vic and player.fruitNumber > 0) {
         return false;
@@ -348,14 +359,14 @@ pub fn getBlockAt(x: f32, y: f32) blockType {
         std.debug.print("{}, {} is out of bounds (getBlockAt)\n", .{ @as(i32, @intFromFloat(x)), @as(i32, @intFromFloat(y)) });
         return blockType.null;
     }
-    return player.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)];
+    return levelManager.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)];
 }
 pub fn getBlockWorldGrid(x: i32, y: i32) blockType {
     if (x >= 16 or y >= 9 or x < 0 or y < 0) {
         std.debug.print("{}, {} is out of bounds (getBlockWorldGrid) \n", .{ (x), (y) });
         return blockType.null;
     }
-    return player.mat16x9[@intCast(y)][@intCast(x)];
+    return levelManager.mat16x9[@intCast(y)][@intCast(x)];
 }
 //Uses screen coords (not box Coords, which are different and used by the mat16x9 array)
 pub fn setBlockAt(x: f32, y: f32, block: blockType) void {
@@ -365,15 +376,22 @@ pub fn setBlockAt(x: f32, y: f32, block: blockType) void {
         std.debug.print("Out of bounds\n", .{});
         return;
     }
-    player.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)] = block;
+    levelManager.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)] = block;
 }
-pub fn setBlockWorldGrid(x: i32, y: i32, block: blockType) void {
+pub fn setBlockWorldGrid(x: f32, y: f32, block: blockType) void {
     if (x >= 16 or y >= 9 or x < 0 or y < 0) {
         std.debug.print("Out of bounds\n", .{});
         return;
     }
-    player.mat16x9[@intCast(y)][@intCast(x)] = block;
+    levelManager.mat16x9[@intFromFloat(y)][@intFromFloat(x)] = block;
 }
+// pub fn setBlockWorldGrid(x: f32, y: f32, block: blockType) void {
+//     if (x >= 16 or y >= 9 or x < 0 or y < 0) {
+//         std.debug.print("Out of bounds\n", .{});
+//         return;
+//     }
+//     levelManager.mat16x9[@intCast(y)][@intCast(x)] = block;
+// }
 pub fn setWindowSizeFromVector(ScreenSize: rl.Vector2) void {
     rl.setWindowSize(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
     boxSize = @divExact(rl.getScreenWidth(), 16);
