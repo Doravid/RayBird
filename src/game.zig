@@ -318,7 +318,6 @@ fn fullScreen() void {
     }
 }
 pub fn directionToVec2(dir: player.direction) rl.Vector2 {
-    std.debug.print("dir {}", .{dir});
     switch (dir) {
         player.direction.up => {
             return rl.Vector2{ .x = 0, .y = -1 };
@@ -337,13 +336,25 @@ pub fn directionToVec2(dir: player.direction) rl.Vector2 {
 pub fn posMoveable(x: i32, y: i32, direction: player.direction) bool {
     const blk = getBlockWorldGrid(x, y);
     if (blk == box) {
+        std.debug.print("Its a block!!\n", .{});
+        if (direction == player.direction.up or direction == player.direction.down) {
+            check_groups: {
+                const current: rl.Vector2 = rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y) };
+                const twoAway: rl.Vector2 = if (direction != player.direction.up)
+                    rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y - 2) }
+                else
+                    rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y + 2) };
+                std.debug.print("we be gonna up up up you take me higer!! ooahhaahh\n", .{});
+                const currentGroup = boxes.boxGroupAtCoord(current) catch break :check_groups;
+                std.debug.print("im done hiding now im\n", .{});
+
+                const twoAwayGroup = boxes.boxGroupAtCoord(twoAway) catch break :check_groups;
+                std.debug.print("shining like im supossed tooo bbeeeeeee\n", .{});
+                std.debug.print("ptr1 {*} ptr2 {*} ", .{ currentGroup.items.ptr, twoAwayGroup.items.ptr });
+                if (currentGroup.items.ptr == twoAwayGroup.items.ptr) return false;
+            }
+        }
         return boxes.canMoveBox(x, y, direction);
-        // switch (direction) {
-        //     player.direction.up => return (posMoveable(x, y - 1, direction)),
-        //     player.direction.down => return (posMoveable(x, y + 1, direction)),
-        //     player.direction.left => return (posMoveable(x - 1, y, direction)),
-        //     player.direction.right => return (posMoveable(x + 1, y, direction)),
-        // }
     }
     if (blk == vic and player.fruitNumber > 0) {
         return false;

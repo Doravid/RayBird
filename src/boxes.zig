@@ -12,6 +12,7 @@ const frt = blockType.frt;
 const box = blockType.box;
 pub const direction = player.direction;
 var movementLocked = false;
+pub var canBoxesFall = false;
 
 pub var redoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 pub var undoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
@@ -47,14 +48,13 @@ fn boxGroupHasCoord(coord: rl.Vector2, boxGroup: std.ArrayList(rl.Vector2)) bool
 }
 fn canGroupMove(boxGroup: std.ArrayList(rl.Vector2), dir: direction) bool {
     for (boxGroup.items) |curbox| {
-        std.debug.print("vec: {}\n\n", .{curbox});
         if (!posMoveable(@intFromFloat(curbox.x), @intFromFloat(curbox.y), dir)) return false;
     }
     return true;
 }
 pub fn posMoveable(x: i32, y: i32, dir: direction) bool {
     const blk = game.getBlockWorldGrid(x, y);
-    if (blk == box) {
+    if (blk == box or blk == bdy) {
         switch (dir) {
             direction.up => return (posMoveable(x, y - 1, dir)),
             direction.down => return (posMoveable(x, y + 1, dir)),
@@ -79,11 +79,9 @@ pub fn movePos(vec: rl.Vector2, dir: direction) void {
     const dirVector = game.directionToVec2(dir);
 
     for (boxGroup.items) |*curBox| {
-        std.debug.print("test: curBox.x {} curBox.y: {} dir: {}\n", .{ curBox.x, curBox.y, dirVector });
         game.setBlockWorldGrid(curBox.x, curBox.y, air);
         curBox.*.x = curBox.x + dirVector.x;
         curBox.*.y = curBox.y + dirVector.y;
-        std.debug.print("after: curBox.x {} curBox.y: {} dir: {}\n\n", .{ curBox.x, curBox.y, dirVector });
     }
     for (boxGroup.items) |curBox| {
         game.setBlockWorldGrid(curBox.x, curBox.y, box);
@@ -132,6 +130,7 @@ fn fallGroup(groupIndex: usize) void {
 }
 
 pub fn updateBoxGravity() void {
+    if (!canBoxesFall) return;
     while (fallingGroups.items.len < boxList.items.len) {
         fallingGroups.append(false) catch return;
     }

@@ -189,12 +189,14 @@ pub fn loadMenu() bool {
 
         if (levelSelect_button == 1) {
             currentMenu = menuType.levelSelect;
+            boxes.canBoxesFall = true;
             return true;
         }
         if (levelEditor_button == 1) {
             currentMenu = menuType.levelEditor;
             player.clearPlayerAndMap();
             levelEditor.body.clearAndFree();
+            boxes.canBoxesFall = false;
             return false;
         }
         if (options_button == 1) {
