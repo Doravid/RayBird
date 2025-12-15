@@ -24,6 +24,9 @@ pub var redoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_a
 //Player body.
 //0 is always the head, body.items.len is always the floating tail (The square right behind the tail. )
 pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
+
+pub var players = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
+
 pub fn numFruit() i32 {
     var numberOfFruit: i32 = 0;
     for (levelManager.mat16x9) |map| {

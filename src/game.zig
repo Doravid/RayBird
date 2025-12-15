@@ -130,6 +130,18 @@ pub fn runGame() !void {
                 };
                 rl.drawTexturePro(block, rl.Rectangle{ .height = @floatFromInt(block.height), .width = @floatFromInt(block.width), .x = 0, .y = 0 }, rl.Rectangle{ .x = @as(f32, @floatFromInt(rl.getScreenWidth() - @divTrunc(boxSize, 4) * 3)), .y = @as(f32, @floatFromInt(boxSize)) / 4, .height = @as(f32, @floatFromInt(boxSize)) / 2, .width = @as(f32, @floatFromInt(boxSize)) / 2 }, rl.Vector2{ .x = 0, .y = 0 }, 0, Color.white);
                 rl.drawText("Current Block", rl.getScreenWidth() - boxSize, @divTrunc(boxSize, 7) * 6, @divTrunc(boxSize, 8), Color.black);
+                if (levelEditor.currentBlock == box) {
+                    const boxNum = levelEditor.curBoxGroupNumber;
+                    const text = rl.textFormat("Current Box Group: %d", .{boxNum});
+                    rl.drawText(text, @divTrunc(boxSize, 12), @divTrunc(boxSize, 6), @divTrunc(boxSize, 5), Color.black);
+                    rl.drawText("Press 0-9 to select box group", @divTrunc(boxSize, 12), @divTrunc(boxSize, 7) * 3, @divTrunc(boxSize, 5), Color.black);
+                }
+                if (levelEditor.currentBlock == bdy) {
+                    const playerNum = levelEditor.curPlayerGroupNumber;
+                    const text = rl.textFormat("Current Player Group: %d", .{playerNum});
+                    rl.drawText(text, @divTrunc(boxSize, 12), @divTrunc(boxSize, 6), @divTrunc(boxSize, 5), Color.black);
+                    rl.drawText("Press 0-9 to select player group", @divTrunc(boxSize, 12), @divTrunc(boxSize, 7) * 3, @divTrunc(boxSize, 5), Color.black);
+                }
                 drawWater();
             }
             player.drawPlayer(&body_textures, null);
@@ -156,7 +168,7 @@ fn drawSky(cloud_t: rl.Texture2D) void {
 
     //RENDER THE BACKGROUND TO A TEXTURE
     rl.beginTextureMode(backgroundTexture);
-    rl.clearBackground(rl.Color.init(0, 0, 0, 0));
+    rl.clearBackground(rl.Color.white);
 
     //SKY AND SUN
     rl.drawRectangleGradientV(0, 0, rl.getScreenWidth(), rl.getScreenHeight(), Color.sky_blue, Color.orange);
@@ -336,7 +348,6 @@ pub fn directionToVec2(dir: player.direction) rl.Vector2 {
 pub fn posMoveable(x: i32, y: i32, direction: player.direction) bool {
     const blk = getBlockWorldGrid(x, y);
     if (blk == box) {
-        std.debug.print("Its a block!!\n", .{});
         if (direction == player.direction.up or direction == player.direction.down) {
             check_groups: {
                 const current: rl.Vector2 = rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y) };
@@ -344,13 +355,8 @@ pub fn posMoveable(x: i32, y: i32, direction: player.direction) bool {
                     rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y - 2) }
                 else
                     rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y + 2) };
-                std.debug.print("we be gonna up up up you take me higer!! ooahhaahh\n", .{});
                 const currentGroup = boxes.boxGroupAtCoord(current) catch break :check_groups;
-                std.debug.print("im done hiding now im\n", .{});
-
                 const twoAwayGroup = boxes.boxGroupAtCoord(twoAway) catch break :check_groups;
-                std.debug.print("shining like im BORN tooo bbeeeeeee\n", .{});
-                std.debug.print("ptr1 {*} ptr2 {*} ", .{ currentGroup.items.ptr, twoAwayGroup.items.ptr });
                 if (currentGroup.items.ptr == twoAwayGroup.items.ptr) return false;
             }
         }

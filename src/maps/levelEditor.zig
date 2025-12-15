@@ -33,7 +33,8 @@ pub fn initLevelEditor() void {
     levelManager.mat16x9 = emptyMap;
 }
 pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
-var curBoxGroupNumber: usize = 0;
+pub var curBoxGroupNumber: usize = 0;
+pub var curPlayerGroupNumber: usize = 0;
 var userInput: [64:0]u8 = undefined;
 var view: bool = true;
 
@@ -68,7 +69,7 @@ pub fn loadLevelEditor() void {
         if (currentBlock == box and replacedBlock != box) {
             const x: i32 = @divTrunc(@as(i32, @intFromFloat(pos.x)), game.boxSize);
             const y: i32 = @divTrunc(@as(i32, @intFromFloat(pos.y)), game.boxSize);
-            if (boxes.boxList.items.len == 0) {
+            while (boxes.boxList.items.len <= curBoxGroupNumber) {
                 const boxGroup = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
                 boxes.boxList.append(boxGroup) catch |err| {
                     std.debug.print("Failed to append to box: {}\n", .{err});
@@ -124,6 +125,15 @@ pub fn loadLevelEditor() void {
         var x = @intFromEnum(currentBlock) - 1;
         if (x < 0) x = numBlocks - 1;
         currentBlock = @enumFromInt(x);
+    }
+    if (currentBlock == bdy or currentBlock == box) {
+        var key: i32 = @intCast(@intFromEnum(rl.getKeyPressed()));
+        key -= @intCast(@intFromEnum(rl.KeyboardKey.zero));
+        if (key >= 0 and key <= 9) {
+            if (currentBlock == box) {
+                curBoxGroupNumber = @intCast(key);
+            } else curPlayerGroupNumber = @intCast(key);
+        }
     }
     if (body.items.len > 0) {
         player.drawPlayer(&game.body_textures, body);

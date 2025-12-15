@@ -11,7 +11,7 @@ pub fn main() anyerror!void {
     rl.setConfigFlags(myFlag);
     rl.initWindow(1920, 1080, "RayBird");
     rl.initAudioDevice();
-    rl.setTargetFPS(360);
+    rl.setTargetFPS(3000);
     rl.setExitKey(rl.KeyboardKey.delete);
     gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, 30);
 
