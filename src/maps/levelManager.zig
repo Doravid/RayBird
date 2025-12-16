@@ -22,7 +22,7 @@ pub var mat16x9 = [9][16]game.blockType{
 };
 pub const level = struct {
     map: [9][16]game.blockType,
-    player: []rl.Vector2,
+    player: [][]rl.Vector2,
     boxes: [][]rl.Vector2,
     const Self = @This();
     pub fn init(map: [9][16]game.blockType, playerA: []rl.Vector2) Self {
@@ -79,7 +79,7 @@ pub fn loadLevelFromJson(name: u32) level {
             std.log.info("Loading embedded level {}", .{name});
         } else {
             std.debug.print("Error: Level {} not found in embedded data (WASM target)\n", .{name});
-            return level{ .map = mat16x9, .player = &[_]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+            return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
         }
     } else {
         const prefix = "./src/maps/level";
@@ -87,13 +87,13 @@ pub fn loadLevelFromJson(name: u32) level {
 
         const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
             std.debug.print("Failed to merge string and int for path: {}\n", .{err});
-            return level{ .map = mat16x9, .player = &[_]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+            return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
         };
         defer alloc.free(newPrefix);
 
         const path = alloc.alloc(u8, newPrefix.len + suffix.len) catch |err| {
             std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
-            return level{ .map = mat16x9, .player = &[_]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+            return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
         };
         defer alloc.free(path);
 
@@ -102,7 +102,7 @@ pub fn loadLevelFromJson(name: u32) level {
 
         jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
             std.debug.print("Failed to read the file: {}. Ensure it exists and is accessible.\n", .{err});
-            return level{ .map = mat16x9, .player = &[_]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+            return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
         };
         should_free_json = true;
     }
@@ -112,7 +112,7 @@ pub fn loadLevelFromJson(name: u32) level {
         .ignore_unknown_fields = true,
     }) catch |err| {
         std.debug.print("Failed to parse json for level {}: {}\n", .{ name, err });
-        return level{ .map = mat16x9, .player = &[_]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+        return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
     };
 
     return result.value;
@@ -121,6 +121,7 @@ pub fn loadLevelFromJson(name: u32) level {
 var maxLevelUnlocked: usize = 0;
 
 var currentLevelNumber: usize = 0;
+
 pub fn setLevel(levelNumber: u32) void {
     player.clearPlayer();
     const levelA = loadLevelFromJson(levelNumber);
@@ -128,10 +129,16 @@ pub fn setLevel(levelNumber: u32) void {
     if (levelNumber > maxLevelUnlocked) {
         maxLevelUnlocked = levelNumber - 1;
     }
-    for (levelA.player) |elem| {
-        const newBody = rl.Vector2{ .x = elem.x, .y = elem.y };
-        player.body.append(newBody) catch |err| {
-            std.debug.print("Failed to append .position body (from lvl Manager): {}\n", .{err});
+    for (levelA.player) |playerSlice| {
+        var newPlayer = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
+        for (playerSlice) |elem| {
+            newPlayer.append(rl.Vector2{ .x = elem.x, .y = elem.y }) catch |err| {
+                std.debug.print("Failed to append player body part: {}\n", .{err});
+                return;
+            };
+        }
+        player.playerList.append(newPlayer) catch |err| {
+            std.debug.print("Failed to append player: {}\n", .{err});
             return;
         };
     }
@@ -147,6 +154,15 @@ pub fn setLevel(levelNumber: u32) void {
         };
     }
     mat16x9 = levelA.map;
+
+    for (player.playerList.items, 0..) |playerBody, i| {
+        if (i != player.currentPlayerIndex) {
+            for (playerBody.items) |segment| {
+                game.setBlockWorldGrid(segment.x, segment.y, game.blockType.bdy);
+            }
+        }
+    }
+
     player.fruitNumber = player.numFruit();
 }
 
@@ -195,7 +211,8 @@ pub fn loadMenu() bool {
         if (levelEditor_button == 1) {
             currentMenu = menuType.levelEditor;
             player.clearPlayerAndMap();
-            levelEditor.body.clearAndFree();
+            for (player.playerList.items) |p| p.deinit();
+            player.playerList.clearAndFree();
             boxes.canBoxesFall = false;
             return false;
         }

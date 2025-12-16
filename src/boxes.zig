@@ -13,12 +13,12 @@ const box = blockType.box;
 pub const direction = player.direction;
 var movementLocked = false;
 pub var canBoxesFall = false;
-const noGroup = error{noGroupFound};
+pub const noGroup = error{noGroupFound};
 pub var redoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 pub var undoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 pub var boxList = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 var fallingGroups = std.ArrayList(bool).init(std.heap.c_allocator);
-const Vec2Hash = struct { x: i32, y: i32 };
+pub const Vec2Hash = struct { x: i32, y: i32 };
 
 pub fn canMoveBox(x: i32, y: i32, dir: player.direction) bool {
     const vec: rl.Vector2 = rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y) };
@@ -43,7 +43,7 @@ fn boxGroupHasCoord(coord: rl.Vector2, boxGroup: std.ArrayList(rl.Vector2)) bool
     return false;
 }
 
-fn canGroupMove(boxGroup: std.ArrayList(rl.Vector2), dir: direction) bool {
+pub fn canGroupMove(boxGroup: std.ArrayList(rl.Vector2), dir: direction) bool {
     var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
@@ -114,7 +114,7 @@ fn boxGroupEquals(a: std.ArrayList(rl.Vector2), b: std.ArrayList(rl.Vector2)) bo
     return true;
 }
 
-fn directionToOffset(dir: direction) struct { x: i32, y: i32 } {
+pub fn directionToOffset(dir: direction) struct { x: i32, y: i32 } {
     return switch (dir) {
         direction.left => .{ .x = -1, .y = 0 },
         direction.right => .{ .x = 1, .y = 0 },
@@ -122,8 +122,24 @@ fn directionToOffset(dir: direction) struct { x: i32, y: i32 } {
         direction.down => .{ .x = 0, .y = 1 },
     };
 }
+pub fn directionToVec2(dir: player.direction) rl.Vector2 {
+    switch (dir) {
+        player.direction.up => {
+            return rl.Vector2{ .x = 0, .y = -1 };
+        },
+        player.direction.down => {
+            return rl.Vector2{ .x = 0, .y = 1 };
+        },
+        player.direction.left => {
+            return rl.Vector2{ .x = -1, .y = 0 };
+        },
+        player.direction.right => {
+            return rl.Vector2{ .x = 1, .y = 0 };
+        },
+    }
+}
 
-fn isDestinationValid(x: i32, y: i32, movingPositions: *std.AutoHashMap(Vec2Hash, void)) bool {
+pub fn isDestinationValid(x: i32, y: i32, movingPositions: *std.AutoHashMap(Vec2Hash, void)) bool {
     const blk = game.getBlockWorldGrid(x, y);
     const pos = Vec2Hash{ .x = x, .y = y };
     if (movingPositions.contains(pos)) return true;
@@ -213,14 +229,18 @@ fn canGroupFall(boxGroup: std.ArrayList(rl.Vector2)) bool {
         if (blockBelow == box) {
             if (!canGroupMove(boxGroup, direction.down)) return false;
         }
-        if (isPlayerAtPosition(@floatFromInt(gridX), @floatFromInt(gridY + 1))) return false;
+        if (blockBelow == bdy) {
+            if (!player.canGroupMove(boxGroup, direction.down)) return false;
+        }
     }
     return true;
 }
 
 fn isPlayerAtPosition(x: f32, y: f32) bool {
-    for (player.body.items) |bodyPart| {
-        if (bodyPart.x == x and bodyPart.y == y) return true;
+    for (player.playerList.items) |playerBody| {
+        for (playerBody.items) |bodyPart| {
+            if (bodyPart.x == x and bodyPart.y == y) return true;
+        }
     }
     return false;
 }

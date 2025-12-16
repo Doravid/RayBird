@@ -144,7 +144,7 @@ pub fn runGame() !void {
                 }
                 drawWater();
             }
-            player.drawPlayer(&body_textures, null);
+            player.drawPlayer(&body_textures);
             boxes.drawBoxes(move_t);
             inMenus = levelManager.checkPause();
             drawWater();
@@ -361,6 +361,9 @@ pub fn posMoveable(x: i32, y: i32, direction: player.direction) bool {
             }
         }
         return boxes.canMoveBox(x, y, direction);
+    }
+    if (blk == bdy) {
+        return player.canPlayerAtPosMove(x, y, direction);
     }
     if (blk == vic and player.fruitNumber > 0) {
         return false;

@@ -32,7 +32,7 @@ pub const emptyMap = [9][16]blockType{
 pub fn initLevelEditor() void {
     levelManager.mat16x9 = emptyMap;
 }
-pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
+// pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
 pub var curBoxGroupNumber: usize = 0;
 pub var curPlayerGroupNumber: usize = 0;
 var userInput: [64:0]u8 = undefined;
@@ -43,29 +43,39 @@ pub fn loadLevelEditor() void {
     if (!waitingOnInput and (rl.isKeyDown(rl.KeyboardKey.left_control) and rl.isKeyDown(rl.KeyboardKey.s))) {
         waitingOnInput = true;
     }
-
+    if (rl.isKeyPressed(rl.KeyboardKey.tab)) {
+        if (player.playerList.items.len > 0) {
+            player.currentPlayerIndex = (player.currentPlayerIndex + 1) % player.playerList.items.len;
+        }
+    }
     if (rl.isMouseButtonPressed(rl.MouseButton.left) and !waitingOnInput) {
         const pos = rl.getMousePosition();
         std.debug.print("x: {}, y: {} \n", .{ pos.x, pos.y });
         const replacedBlock = game.getBlockAt(pos.x, pos.y);
         if (currentBlock != bdy and currentBlock != box) game.setBlockAt(pos.x, pos.y, currentBlock);
-
         if (currentBlock == bdy and replacedBlock != bdy) {
             const x: i32 = @divTrunc(@as(i32, @intFromFloat(pos.x)), game.boxSize);
             const y: i32 = @divTrunc(@as(i32, @intFromFloat(pos.y)), game.boxSize);
-            if (body.items.len == 0 or
-                (@abs(x - @as(i32, @intFromFloat(body.items[0].x))) == 1 and @abs(y - @as(i32, @intFromFloat(body.items[0].y))) == 0) or
-                (@abs(y - @as(i32, @intFromFloat(body.items[0].y))) == 1 and @abs(x - @as(i32, @intFromFloat(body.items[0].x))) == 0))
+            while (player.playerList.items.len <= player.currentPlayerIndex) {
+                const newPlayer = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
+                player.playerList.append(newPlayer) catch |err| {
+                    std.debug.print("Failed to append player: {}\n", .{err});
+                    return;
+                };
+            }
+            var currentPlayer = &player.playerList.items[player.currentPlayerIndex];
+            if (currentPlayer.items.len == 0 or
+                (@abs(x - @as(i32, @intFromFloat(currentPlayer.items[0].x))) == 1 and @abs(y - @as(i32, @intFromFloat(currentPlayer.items[0].y))) == 0) or
+                (@abs(y - @as(i32, @intFromFloat(currentPlayer.items[0].y))) == 1 and @abs(x - @as(i32, @intFromFloat(currentPlayer.items[0].x))) == 0))
             {
-                body.insert(0, rl.Vector2{ .x = @as(f32, @floatFromInt(x)), .y = @as(f32, @floatFromInt(y)) }) catch |err| {
+                currentPlayer.insert(0, rl.Vector2{ .x = @as(f32, @floatFromInt(x)), .y = @as(f32, @floatFromInt(y)) }) catch |err| {
                     std.debug.print("Failed to insert/app body: {}\n", .{err});
                     return;
                 };
-                std.log.debug("vector {}", .{body.items[body.items.len - 1]});
+                std.log.debug("vector {}", .{currentPlayer.items[currentPlayer.items.len - 1]});
                 game.setBlockAt((pos.x), (pos.y), currentBlock);
             }
         }
-
         if (currentBlock == box and replacedBlock != box) {
             const x: i32 = @divTrunc(@as(i32, @intFromFloat(pos.x)), game.boxSize);
             const y: i32 = @divTrunc(@as(i32, @intFromFloat(pos.y)), game.boxSize);
@@ -77,7 +87,6 @@ pub fn loadLevelEditor() void {
                 };
             }
             var boxGroup: *std.ArrayList(rl.Vector2) = &boxes.boxList.items.ptr[curBoxGroupNumber];
-
             boxGroup.append(rl.Vector2{ .x = @as(f32, @floatFromInt(x)), .y = @as(f32, @floatFromInt(y)) }) catch |err| {
                 std.debug.print("Failed to append to box: {}\n", .{err});
                 return;
@@ -85,7 +94,6 @@ pub fn loadLevelEditor() void {
             game.setBlockAt((pos.x), (pos.y), currentBlock);
         }
     }
-
     if (waitingOnInput) {
         const res = gui.guiTextInputBox(text_box, "Save Level", "Please enter level name:", "Save;Cancel", &userInput, 64, &view);
         if (res == -1) return;
@@ -94,14 +102,17 @@ pub fn loadLevelEditor() void {
             waitingOnInput = false;
             var tempBoxes = std.ArrayList([]rl.Vector2).init(std.heap.c_allocator);
             defer tempBoxes.deinit();
-
             for (boxes.boxList.items) |group| {
                 tempBoxes.append(group.items) catch return;
             }
-
+            var tempPlayers = std.ArrayList([]rl.Vector2).init(std.heap.c_allocator);
+            defer tempPlayers.deinit();
+            for (player.playerList.items) |group| {
+                tempPlayers.append(group.items) catch return;
+            }
             const levelData = levelManager.level{
                 .map = levelManager.mat16x9,
-                .player = body.items,
+                .player = tempPlayers.items,
                 .boxes = tempBoxes.items,
             };
             writeLevelToFile(levelData, userInput);
@@ -132,19 +143,17 @@ pub fn loadLevelEditor() void {
         if (key >= 0 and key <= 9) {
             if (currentBlock == box) {
                 curBoxGroupNumber = @intCast(key);
-            } else curPlayerGroupNumber = @intCast(key);
+            } else player.currentPlayerIndex = @intCast(key);
         }
     }
-    if (body.items.len > 0) {
-        player.drawPlayer(&game.body_textures, body);
+    if (player.playerList.items.len > 0) {
+        player.drawPlayer(&game.body_textures);
     }
 }
 fn writeLevelToFile(level1: levelManager.level, name: [64:0]u8) void {
     const allocator = std.heap.c_allocator;
-
     const name_slice = std.mem.sliceTo(&name, 0);
     const name_len = name_slice.len;
-
     const prefix = "./src/maps/";
     const suffix = ".json";
     const path = allocator.alloc(u8, prefix.len + name_len + suffix.len) catch |err| {
@@ -154,8 +163,6 @@ fn writeLevelToFile(level1: levelManager.level, name: [64:0]u8) void {
     std.mem.copyForwards(u8, path[0..], prefix);
     std.mem.copyForwards(u8, path[prefix.len..], name[0..name_len]);
     std.mem.copyForwards(u8, path[prefix.len + name_len ..], suffix);
-
-    //Print to file
     const string = json.stringifyAlloc(allocator, level1, .{ .emit_strings_as_arrays = false }) catch |err| {
         std.debug.print("Failed to stringify: {}\n", .{err});
         return;
