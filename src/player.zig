@@ -19,10 +19,9 @@ pub var currentPlayerIndex: usize = 0;
 var fallingPlayers = std.ArrayList(bool).init(std.heap.c_allocator);
 pub var fruitNumber: i32 = 0;
 //Player history!
-pub var undoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
+pub var undoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).init(std.heap.c_allocator);
+pub var redoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).init(std.heap.c_allocator);
 var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.c_allocator);
-
-pub var redoHistory = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 
 //Player body.
 //0 is always the head, playerList.items[currentPlayerIndex].items.len is always the floating tail (The square right behind the tail. )
@@ -44,6 +43,7 @@ pub fn numFruit() i32 {
 //Moves the player and adds their previous position to player history. (If the move is valid ofc)
 pub fn updatePos() void {
     if (playerList.items.len == 0 or currentPlayerIndex >= playerList.items.len or playerList.items[currentPlayerIndex].items.len == 0) return;
+
     if (rl.isKeyPressed(rl.KeyboardKey.r)) {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
     }
@@ -88,49 +88,40 @@ pub fn updatePos() void {
     }
 }
 fn undo() void {
-    // if (undoHistory.items.len <= 0) return;
-    // const oldBody = body.clone() catch |err| {
-    //     std.debug.print("Failed to clone body: {}\n", .{err});
-    //     return;
-    // };
-    // redoHistory.append(oldBody) catch |err| {
-    //     std.debug.print("Failed to append redo history r edo: {}\n", .{err});
-    //     return;
-    // };
-    // body = undoHistory.pop();
+    if (undoHistory.items.len <= 0) return;
+    const oldBody = playerList.clone() catch |err| {
+        std.debug.print("Failed to clone playerList: {}\n", .{err});
+        return;
+    };
+    redoHistory.append(oldBody) catch |err| {
+        std.debug.print("Failed to append redo history: {}\n", .{err});
+        return;
+    };
+    playerList = undoHistory.pop();
 
-    // levelManager.mat16x9 = mapHistory.pop();
+    levelManager.mat16x9 = mapHistory.pop();
 }
 
 fn redo() void {
-    // if (redoHistory.items.len <= 0) return;
-    // var i: usize = 0;
-    // while (i < playerList.items[currentPlayerIndex].items.len) {
-    //     game.setBlockWorldGrid(playerList.items[currentPlayerIndex].items[i].x, playerList.items[currentPlayerIndex].items[i].y, air);
-    //     i += 1;
-    // }
-    // const clone = body.clone() catch |err| {
-    //     std.debug.print("Failed to clone body redo: {}\n", .{err});
-    //     return;
-    // };
-    // undoHistory.append(clone) catch |err| {
-    //     std.debug.print("Failed to append undo position: {}\n", .{err});
-    //     return;
-    // };
-    // mapHistory.append(levelManager.mat16x9) catch |err| {
-    //     std.debug.print("Failed to append map history: {}\n", .{err});
-    //     return;
-    // };
-    // body = redoHistory.pop();
-    // i = 0;
-    // while (i < playerList.items[currentPlayerIndex].items.len) {
-    //     game.setBlockWorldGrid((playerList.items[currentPlayerIndex].items[i].x), (playerList.items[currentPlayerIndex].items[i].y), bdy);
-    //     i += 1;
-    // }
+    if (redoHistory.items.len <= 0) return;
+
+    const clone = playerList.clone() catch |err| {
+        std.debug.print("Failed to clone body redo: {}\n", .{err});
+        return;
+    };
+    undoHistory.append(clone) catch |err| {
+        std.debug.print("Failed to append undo position: {}\n", .{err});
+        return;
+    };
+    mapHistory.append(levelManager.mat16x9) catch |err| {
+        std.debug.print("Failed to append map history: {}\n", .{err});
+        return;
+    };
+    playerList = redoHistory.pop();
 }
 fn movePlayer(dir: direction) void {
     redoHistory.clearAndFree();
-
+    undoHistory.append(deepClonePlayerList(playerList) catch return) catch return;
     mapHistory.append(levelManager.mat16x9) catch |err| {
         std.debug.print("Failed to append map history: {}\n", .{err});
         return;
@@ -190,7 +181,7 @@ pub fn drawPlayer(textures: []const rl.Texture) void {
     }
 }
 pub fn clearPlayer() void {
-    playerList.deinit();
+    playerList.clearAndFree();
     clearPlayerAndMap();
     boxes.clearBoxes();
     undoHistory.clearAndFree();
@@ -240,4 +231,17 @@ fn isOwnBodyAt(x: i32, y: i32) bool {
         }
     }
     return false;
+}
+fn deepClonePlayerList(
+    src: std.ArrayList(std.ArrayList(rl.Vector2)),
+) !std.ArrayList(std.ArrayList(rl.Vector2)) {
+    var out = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
+
+    for (src.items) |playerBody| {
+        var bodyClone = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
+        try bodyClone.appendSlice(playerBody.items);
+        try out.append(bodyClone);
+    }
+
+    return out;
 }

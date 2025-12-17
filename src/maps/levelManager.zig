@@ -123,25 +123,27 @@ var maxLevelUnlocked: usize = 0;
 var currentLevelNumber: usize = 0;
 
 pub fn setLevel(levelNumber: u32) void {
+    std.debug.print(":pensive:\n", .{});
     player.clearPlayer();
+    std.debug.print(":clearedPlayer:\n", .{});
     const levelA = loadLevelFromJson(levelNumber);
+    std.debug.print(":levelLoaded!!:\n", .{});
     currentLevelNumber = levelNumber;
     if (levelNumber > maxLevelUnlocked) {
         maxLevelUnlocked = levelNumber - 1;
     }
     for (levelA.player) |playerSlice| {
         var newPlayer = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
-        for (playerSlice) |elem| {
-            newPlayer.append(rl.Vector2{ .x = elem.x, .y = elem.y }) catch |err| {
-                std.debug.print("Failed to append player body part: {}\n", .{err});
-                return;
-            };
-        }
+        newPlayer.appendSlice(playerSlice) catch |err| {
+            std.debug.print("Failed to append player slice: {}\n", .{err});
+            return;
+        };
         player.playerList.append(newPlayer) catch |err| {
             std.debug.print("Failed to append player: {}\n", .{err});
             return;
         };
     }
+    // std.debug.print("players: {any}", .{player.playerList.items});
     for (levelA.boxes) |slice| {
         var group = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
         group.appendSlice(slice) catch |err| {
@@ -155,11 +157,10 @@ pub fn setLevel(levelNumber: u32) void {
     }
     mat16x9 = levelA.map;
 
-    for (player.playerList.items, 0..) |playerBody, i| {
-        if (i != player.currentPlayerIndex) {
-            for (playerBody.items) |segment| {
-                game.setBlockWorldGrid(segment.x, segment.y, game.blockType.bdy);
-            }
+    for (player.playerList.items) |playerBody| {
+        for (playerBody.items) |segment| {
+            std.debug.print("segment: {}", .{segment});
+            game.setBlockWorldGrid(segment.x, segment.y, game.blockType.bdy);
         }
     }
 
