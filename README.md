@@ -14,10 +14,10 @@ Thank you to [Snake Bird](https://store.steampowered.com/app/357300/Snakebird/) 
 
 ## TODO
 
-~~* Dynamic Backgrounds~~
-~~* Multiple Playable Snakes~~
+* ~~Dynamic Backgrounds~~
+* ~~Multiple Playable Snakes~~
 * Updated Snake Graphics
-~~* Pushable Objects~~
+* ~~Pushable Objects~~
 * Portals
 * New UI
 * Resolution Changing
