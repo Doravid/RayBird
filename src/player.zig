@@ -23,10 +23,7 @@ pub var undoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).in
 pub var redoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).init(std.heap.c_allocator);
 var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.c_allocator);
 
-//Player body.
-//0 is always the head, playerList.items[currentPlayerIndex].items.len is always the floating tail (The square right behind the tail. )
-// pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
-
+//For each player 0 is always the head items.len is always the floating tail (The square right behind the tail. )
 pub var playerList = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 
 pub fn numFruit() i32 {
@@ -40,7 +37,7 @@ pub fn numFruit() i32 {
     }
     return numberOfFruit;
 }
-//Moves the player and adds their previous position to player history. (If the move is valid ofc)
+
 pub fn updatePos() void {
     if (playerList.items.len == 0 or currentPlayerIndex >= playerList.items.len or playerList.items[currentPlayerIndex].items.len == 0) return;
 
@@ -89,6 +86,7 @@ pub fn updatePos() void {
 }
 fn undo() void {
     if (undoHistory.items.len <= 0) return;
+    boxes.undo();
     const oldBody = playerList.clone() catch |err| {
         std.debug.print("Failed to clone playerList: {}\n", .{err});
         return;
@@ -104,7 +102,7 @@ fn undo() void {
 
 fn redo() void {
     if (redoHistory.items.len <= 0) return;
-
+    boxes.redo();
     const clone = playerList.clone() catch |err| {
         std.debug.print("Failed to clone body redo: {}\n", .{err});
         return;
@@ -122,6 +120,8 @@ fn redo() void {
 fn movePlayer(dir: direction) void {
     redoHistory.clearAndFree();
     undoHistory.append(deepClonePlayerList(playerList) catch return) catch return;
+    boxes.boxUndoHistory.append(deepClonePlayerList(boxes.boxList) catch return) catch return;
+
     mapHistory.append(levelManager.mat16x9) catch |err| {
         std.debug.print("Failed to append map history: {}\n", .{err});
         return;
@@ -206,18 +206,6 @@ pub fn clearPlayerAndMap() void {
     };
     playerList.deinit();
     boxes.clearBoxes();
-}
-
-pub fn findPlayerAtPosition(x: i32, y: i32) ?usize {
-    for (playerList.items, 0..) |playerBody, i| {
-        if (i == currentPlayerIndex) continue;
-        for (playerBody.items) |segment| {
-            if (@as(i32, @intFromFloat(segment.x)) == x and @as(i32, @intFromFloat(segment.y)) == y) {
-                return i;
-            }
-        }
-    }
-    return null;
 }
 
 fn isOwnBodyAt(x: i32, y: i32) bool {

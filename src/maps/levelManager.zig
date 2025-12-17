@@ -129,6 +129,7 @@ pub fn setLevel(levelNumber: u32) void {
     const levelA = loadLevelFromJson(levelNumber);
     std.debug.print(":levelLoaded!!:\n", .{});
     currentLevelNumber = levelNumber;
+
     if (levelNumber > maxLevelUnlocked) {
         maxLevelUnlocked = levelNumber - 1;
     }
@@ -206,7 +207,6 @@ pub fn loadMenu() bool {
 
         if (levelSelect_button == 1) {
             currentMenu = menuType.levelSelect;
-            boxes.canBoxesFall = true;
             return true;
         }
         if (levelEditor_button == 1) {
@@ -214,7 +214,6 @@ pub fn loadMenu() bool {
             player.clearPlayerAndMap();
             for (player.playerList.items) |p| p.deinit();
             player.playerList.clearAndFree();
-            boxes.canBoxesFall = false;
             return false;
         }
         if (options_button == 1) {

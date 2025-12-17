@@ -100,8 +100,10 @@ pub fn runGame() !void {
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or DEL key
         // Update
-        movement.updateGravity();
-        player.updatePos();
+        if (levelManager.currentMenu != levelManager.menuType.levelEditor) {
+            movement.updateGravity();
+            player.updatePos();
+        }
         fullScreen();
 
         // Draw
