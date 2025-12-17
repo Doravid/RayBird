@@ -2,6 +2,7 @@ const game = @import("game.zig");
 const player = @import("player.zig");
 const rl = @import("raylib");
 const std = @import("std");
+const movement = @import("movement.zig");
 const levelManager = @import("maps/levelManager.zig");
 const blockType = game.blockType;
 const sol = blockType.sol;
@@ -20,14 +21,15 @@ pub var boxList = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_alloc
 var fallingGroups = std.ArrayList(bool).init(std.heap.c_allocator);
 pub const Vec2Hash = struct { x: i32, y: i32 };
 
-pub fn canMoveBox(x: i32, y: i32, dir: player.direction) bool {
-    const vec: rl.Vector2 = rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y) };
-    const boxGroup = boxGroupAtCoord(vec) catch |err| {
-        std.debug.print("box does not exist {}", .{err});
-        return false;
-    };
-    return canGroupMove(boxGroup, dir);
-}
+// pub fn canMoveBox(x: i32, y: i32, dir: player.direction) bool {
+//     std.debug.print("Can move? ", .{});
+//     const vec: rl.Vector2 = rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y) };
+//     const boxGroup = boxGroupAtCoord(vec) catch |err| {
+//         std.debug.print("box does not exist {}", .{err});
+//         return false;
+//     };
+//     return canGroupMove(boxGroup, dir);
+// }
 
 pub fn boxGroupAtCoord(coord: rl.Vector2) !std.ArrayList(rl.Vector2) {
     for (boxList.items) |boxGroup| {
@@ -43,61 +45,63 @@ fn boxGroupHasCoord(coord: rl.Vector2, boxGroup: std.ArrayList(rl.Vector2)) bool
     return false;
 }
 
-pub fn canGroupMove(boxGroup: std.ArrayList(rl.Vector2), dir: direction) bool {
-    var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-    var affectedGroups = std.ArrayList(usize).init(allocator);
-    var visitedGroups = std.AutoHashMap(usize, void).init(allocator);
-    var queue = std.ArrayList(usize).init(allocator);
-    var startIndex: ?usize = null;
-    for (boxList.items, 0..) |*group, i| {
-        if (boxGroupEquals(group.*, boxGroup)) {
-            startIndex = i;
-            break;
-        }
-    }
-    if (startIndex == null) return false;
-    queue.append(startIndex.?) catch return false;
-    while (queue.items.len > 0) {
-        const currentIndex = queue.orderedRemove(0);
-        if (visitedGroups.contains(currentIndex)) continue;
-        visitedGroups.put(currentIndex, {}) catch return false;
-        affectedGroups.append(currentIndex) catch return false;
-        for (boxList.items[currentIndex].items) |curBox| {
-            const dirVec = directionToOffset(dir);
-            const nextX = @as(i32, @intFromFloat(curBox.x)) + dirVec.x;
-            const nextY = @as(i32, @intFromFloat(curBox.y)) + dirVec.y;
-            const nextBlock = game.getBlockWorldGrid(nextX, nextY);
-            if (nextBlock == box) {
-                const nextVec = rl.Vector2{ .x = @floatFromInt(nextX), .y = @floatFromInt(nextY) };
-                const nextGroup = boxGroupAtCoord(nextVec) catch continue;
-                for (boxList.items, 0..) |*groupPtr, i| {
-                    if (boxGroupEquals(groupPtr.*, nextGroup)) {
-                        if (!visitedGroups.contains(i)) queue.append(i) catch return false;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    var movingPositions = std.AutoHashMap(Vec2Hash, void).init(allocator);
-    for (affectedGroups.items) |groupIndex| {
-        for (boxList.items[groupIndex].items) |pos| {
-            const hashPos = Vec2Hash{ .x = @intFromFloat(pos.x), .y = @intFromFloat(pos.y) };
-            movingPositions.put(hashPos, {}) catch return false;
-        }
-    }
-    for (affectedGroups.items) |groupIndex| {
-        for (boxList.items[groupIndex].items) |curBox| {
-            const dirVec = directionToOffset(dir);
-            const nextX = @as(i32, @intFromFloat(curBox.x)) + dirVec.x;
-            const nextY = @as(i32, @intFromFloat(curBox.y)) + dirVec.y;
-            if (!isDestinationValid(nextX, nextY, &movingPositions)) return false;
-        }
-    }
-    return true;
-}
+// pub fn canGroupMove(boxGroup: std.ArrayList(rl.Vector2), dir: direction) bool {
+//     var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
+//     defer arena.deinit();
+//     const allocator = arena.allocator();
+//     var affectedGroups = std.ArrayList(usize).init(allocator);
+//     var visitedGroups = std.AutoHashMap(usize, void).init(allocator);
+//     var queue = std.ArrayList(usize).init(allocator);
+//     var startIndex: ?usize = null;
+//     for (boxList.items, 0..) |*group, i| {
+//         if (boxGroupEquals(group.*, boxGroup)) {
+//             startIndex = i;
+//             break;
+//         }
+//     }
+//     if (startIndex == null) return false;
+//     queue.append(startIndex.?) catch return false;
+//     std.debug.print("start index: {any}", .{startIndex});
+//     while (queue.items.len > 0) {
+//         const currentIndex = queue.orderedRemove(0);
+//         if (visitedGroups.contains(currentIndex)) continue;
+//         visitedGroups.put(currentIndex, {}) catch return false;
+//         affectedGroups.append(currentIndex) catch return false;
+//         std.debug.print("current index: {}\nqueue length: {}", .{ currentIndex, queue.items.len });
+//         for (boxList.items[currentIndex].items) |curBox| {
+//             const dirVec = directionToOffset(dir);
+//             const nextX = @as(i32, @intFromFloat(curBox.x)) + dirVec.x;
+//             const nextY = @as(i32, @intFromFloat(curBox.y)) + dirVec.y;
+//             const nextBlock = game.getBlockWorldGrid(nextX, nextY);
+//             if (nextBlock == box) {
+//                 const nextVec = rl.Vector2{ .x = @floatFromInt(nextX), .y = @floatFromInt(nextY) };
+//                 const nextGroup = boxGroupAtCoord(nextVec) catch continue;
+//                 for (boxList.items, 0..) |*groupPtr, i| {
+//                     if (boxGroupEquals(groupPtr.*, nextGroup)) {
+//                         if (!visitedGroups.contains(i)) queue.append(i) catch return false;
+//                         break;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     var movingPositions = std.AutoHashMap(Vec2Hash, void).init(allocator);
+//     for (affectedGroups.items) |groupIndex| {
+//         for (boxList.items[groupIndex].items) |pos| {
+//             const hashPos = Vec2Hash{ .x = @intFromFloat(pos.x), .y = @intFromFloat(pos.y) };
+//             movingPositions.put(hashPos, {}) catch return false;
+//         }
+//     }
+//     for (affectedGroups.items) |groupIndex| {
+//         for (boxList.items[groupIndex].items) |curBox| {
+//             const dirVec = directionToOffset(dir);
+//             const nextX = @as(i32, @intFromFloat(curBox.x)) + dirVec.x;
+//             const nextY = @as(i32, @intFromFloat(curBox.y)) + dirVec.y;
+//             if (!isDestinationValid(nextX, nextY, &movingPositions)) return false;
+//         }
+//     }
+//     return true;
+// }
 
 fn boxGroupEquals(a: std.ArrayList(rl.Vector2), b: std.ArrayList(rl.Vector2)) bool {
     if (a.items.len != b.items.len) return false;
@@ -226,11 +230,8 @@ fn canGroupFall(boxGroup: std.ArrayList(rl.Vector2)) bool {
         if (gridY + 1 >= 9) return false;
         const blockBelow = game.getBlockWorldGrid(gridX, gridY + 1);
         if (blockBelow == sol or blockBelow == frt) return false;
-        if (blockBelow == box) {
-            if (!canGroupMove(boxGroup, direction.down)) return false;
-        }
-        if (blockBelow == bdy) {
-            if (!player.canGroupMove(boxGroup, direction.down)) return false;
+        if (blockBelow == box or blockBelow == bdy) {
+            if (!movement.canPush(@intFromFloat(curBox.x), @intFromFloat(curBox.y), direction.down)) return false;
         }
     }
     return true;

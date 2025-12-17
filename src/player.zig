@@ -1,6 +1,8 @@
 const game = @import("game.zig");
 const boxes = @import("boxes.zig");
 const rl = @import("raylib");
+const movement = @import("movement.zig");
+
 const std = @import("std");
 const levelManager = @import("maps/levelManager.zig");
 const blockType = game.blockType;
@@ -58,24 +60,29 @@ pub fn updatePos() void {
             currentPlayerIndex = (currentPlayerIndex + 1) % playerList.items.len;
         }
     }
-
-    if ((rl.isKeyPressed(rl.KeyboardKey.w) or (rl.isKeyPressed(rl.KeyboardKey.up))) and (playerList.items[currentPlayerIndex].items[0].y) - 1 >= 0) {
-        if (game.posMoveable(@intFromFloat(playerList.items[currentPlayerIndex].items[0].x), @intFromFloat(playerList.items[currentPlayerIndex].items[0].y - 1), direction.up)) {
+    var playX: i32 = @intFromFloat(playerList.items[currentPlayerIndex].items[0].x);
+    var playY: i32 = @intFromFloat(playerList.items[currentPlayerIndex].items[0].y);
+    if ((rl.isKeyPressed(rl.KeyboardKey.w) or rl.isKeyPressed(rl.KeyboardKey.up))) {
+        playY -= 1;
+        if (playY >= 0 and !isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.up)) {
             movePlayer(direction.up);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.a) or (rl.isKeyPressed(rl.KeyboardKey.left))) and playerList.items[currentPlayerIndex].items[0].x - 1 >= 0) {
-        if (game.posMoveable(@intFromFloat(playerList.items[currentPlayerIndex].items[0].x - 1), @intFromFloat(playerList.items[currentPlayerIndex].items[0].y), direction.left)) {
-            movePlayer(direction.left);
-        }
-    }
-    if ((rl.isKeyPressed(rl.KeyboardKey.s) or (rl.isKeyPressed(rl.KeyboardKey.down))) and playerList.items[currentPlayerIndex].items[0].y + 1 < 9) {
-        if (game.posMoveable(@intFromFloat(playerList.items[currentPlayerIndex].items[0].x), @intFromFloat(playerList.items[currentPlayerIndex].items[0].y + 1), direction.down)) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.s) or rl.isKeyPressed(rl.KeyboardKey.down))) {
+        playY += 1;
+        if (playY >= 0 and !isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.down)) {
             movePlayer(direction.down);
         }
     }
-    if ((rl.isKeyPressed(rl.KeyboardKey.d) or (rl.isKeyPressed(rl.KeyboardKey.right))) and playerList.items[currentPlayerIndex].items[0].x + 1 < 16) {
-        if (game.posMoveable(@intFromFloat(playerList.items[currentPlayerIndex].items[0].x + 1), @intFromFloat(playerList.items[currentPlayerIndex].items[0].y), direction.right)) {
+    if ((rl.isKeyPressed(rl.KeyboardKey.a) or rl.isKeyPressed(rl.KeyboardKey.left))) {
+        playX -= 1;
+        if (playY >= 0 and !isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.left)) {
+            movePlayer(direction.left);
+        }
+    }
+    if ((rl.isKeyPressed(rl.KeyboardKey.d) or rl.isKeyPressed(rl.KeyboardKey.right))) {
+        playX += 1;
+        if (playY >= 0 and !isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.right)) {
             movePlayer(direction.right);
         }
     }
@@ -161,14 +168,16 @@ fn movePlayer(dir: direction) void {
         return;
     }
     if (newHead == blockType.box) {
-        boxes.movePos(playerList.items[currentPlayerIndex].items[0], dir);
+        const headX = @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].x));
+        const headY = @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].y));
+        movement.applyPush(headX, headY, dir);
     }
     if (newHead == blockType.bdy) {
         const headX = @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].x));
         const headY = @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].y));
         if (findPlayerAtPosition(headX, headY)) |otherPlayerIndex| {
             if (otherPlayerIndex != currentPlayerIndex) {
-                movePlayerGroup(otherPlayerIndex, dir);
+                movement.applyPush(headX, headY, dir);
             }
         }
     }
@@ -182,103 +191,6 @@ fn movePlayer(dir: direction) void {
         game.setBlockWorldGrid((tail.x), (tail.y), air);
     }
     if (playerList.items[currentPlayerIndex].items.len > 0) game.setBlockWorldGrid((playerList.items[currentPlayerIndex].items[0].x), (playerList.items[currentPlayerIndex].items[0].y), bdy);
-}
-
-pub fn updateGravity() void {
-    if (playerList.items.len == 0 or currentPlayerIndex >= playerList.items.len or levelManager.currentMenu == levelManager.menuType.levelEditor) return;
-
-    while (fallingPlayers.items.len < playerList.items.len) {
-        fallingPlayers.append(false) catch return;
-    }
-
-    for (playerList.items, 0..) |player, i| {
-        if (player.items.len == 0) continue;
-
-        const isCurrentPlayer = (i == currentPlayerIndex);
-        var shouldDie = false;
-
-        const canPlayerFall = canPlayerGroupFall(player);
-
-        if (isCurrentPlayer) {
-            canFall = canPlayerFall;
-            movementLocked = false;
-
-            if (canPlayerFall) {
-                for (player.items) |segment| {
-                    const gridX = @as(i32, @intFromFloat(segment.x));
-                    const gridY = @as(i32, @intFromFloat(segment.y));
-                    const block = game.getBlockWorldGrid(gridX, gridY + 1);
-
-                    if (block == blockType.null) {
-                        levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
-                        return;
-                    }
-                    if (block == blockType.spk) {
-                        shouldDie = true;
-                    }
-                }
-
-                if (shouldDie) {
-                    levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
-                    return;
-                }
-
-                movementLocked = true;
-
-                for (player.items) |segment| {
-                    const block = game.getBlockWorldGrid(@intFromFloat(segment.x), @intFromFloat(segment.y + 1));
-                    if (block == blockType.vic) {
-                        levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
-                        return;
-                    }
-                    game.setBlockWorldGrid(segment.x, segment.y, air);
-                }
-
-                fallPlayerGroup(i);
-            } else {
-                const firstSegment = player.items[0];
-                if (game.getBlockWorldGrid(@intFromFloat(firstSegment.x), @intFromFloat(firstSegment.y)) == air) {
-                    for (player.items) |segment| {
-                        game.setBlockWorldGrid(segment.x, segment.y, bdy);
-                    }
-                }
-            }
-
-            if (!canPlayerFall) {
-                for (player.items) |*segment| {
-                    if (@mod(segment.y, @as(f32, @floatFromInt(game.boxSize))) > 0) {
-                        segment.*.y = @floatFromInt(@as(i32, @intFromFloat(segment.y)));
-                    }
-                }
-            }
-        } else {
-            if (canPlayerFall) {
-                if (!fallingPlayers.items[i]) {
-                    for (player.items) |segment| {
-                        game.setBlockWorldGrid(segment.x, segment.y, air);
-                    }
-                    fallingPlayers.items[i] = true;
-                }
-                fallPlayerGroup(i);
-            } else {
-                if (fallingPlayers.items[i]) {
-                    for (player.items) |*segment| {
-                        segment.*.y = @floatFromInt(@as(i32, @intFromFloat(segment.y)));
-                        game.setBlockWorldGrid(segment.x, segment.y, bdy);
-                    }
-                    fallingPlayers.items[i] = false;
-                }
-            }
-        }
-    }
-}
-
-fn fall() void {
-    var i: usize = playerList.items[currentPlayerIndex].items.len;
-    while (i > 0) {
-        i -= 1;
-        playerList.items[currentPlayerIndex].items[i].y += 10 * rl.getFrameTime();
-    }
 }
 
 pub fn drawPlayer(textures: []const rl.Texture) void {
@@ -295,7 +207,7 @@ pub fn drawPlayer(textures: []const rl.Texture) void {
     }
 }
 pub fn clearPlayer() void {
-    for (playerList.items) |player| player.deinit();
+    playerList.deinit();
     clearPlayerAndMap();
     boxes.clearBoxes();
     undoHistory.clearAndFree();
@@ -318,11 +230,11 @@ pub fn clearPlayerAndMap() void {
         [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
         [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     };
-    for (playerList.items) |player| player.deinit();
+    playerList.deinit();
     boxes.clearBoxes();
 }
 
-fn findPlayerAtPosition(x: i32, y: i32) ?usize {
+pub fn findPlayerAtPosition(x: i32, y: i32) ?usize {
     for (playerList.items, 0..) |playerBody, i| {
         if (i == currentPlayerIndex) continue;
         for (playerBody.items) |segment| {
@@ -332,109 +244,6 @@ fn findPlayerAtPosition(x: i32, y: i32) ?usize {
         }
     }
     return null;
-}
-
-pub fn canPlayerAtPosMove(x: i32, y: i32, dir: direction) bool {
-    const playerIndex = findPlayerAtPosition(x, y) orelse return false;
-    const player = playerList.items[playerIndex];
-
-    var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    var movingPositions = std.AutoHashMap(struct { x: i32, y: i32 }, void).init(allocator);
-    for (player.items) |segment| {
-        const pos = .{ .x = @as(i32, @intFromFloat(segment.x)), .y = @as(i32, @intFromFloat(segment.y)) };
-        movingPositions.put(pos, {}) catch return false;
-    }
-
-    const dirVec = game.directionToVec2(dir);
-    for (player.items) |segment| {
-        const nextX = @as(i32, @intFromFloat(segment.x + dirVec.x));
-        const nextY = @as(i32, @intFromFloat(segment.y + dirVec.y));
-
-        if (nextX < 0 or nextX >= 16 or nextY < 0 or nextY >= 9) return false;
-
-        const nextPos = .{ .x = nextX, .y = nextY };
-        if (movingPositions.contains(nextPos)) continue;
-
-        const nextBlock = game.getBlockWorldGrid(nextX, nextY);
-
-        if (nextBlock == sol or nextBlock == spk) return false;
-        if (nextBlock == blockType.vic and fruitNumber > 0) return false;
-
-        if (nextBlock == bdy) {
-            if (!canPlayerAtPosMove(nextX, nextY, dir)) return false;
-        }
-
-        if (nextBlock == box) {
-            if (!boxes.canMoveBox(nextX, nextY, dir)) return false;
-        }
-    }
-
-    return true;
-}
-
-pub fn movePlayerGroup(playerIndex: usize, dir: direction) void {
-    if (playerIndex >= playerList.items.len) return;
-
-    var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    var affectedPlayers = std.ArrayList(usize).init(allocator);
-    var visitedPlayers = std.AutoHashMap(usize, void).init(allocator);
-    var queue = std.ArrayList(usize).init(allocator);
-
-    queue.append(playerIndex) catch return;
-
-    while (queue.items.len > 0) {
-        const currentIndex = queue.orderedRemove(0);
-        if (visitedPlayers.contains(currentIndex)) continue;
-
-        visitedPlayers.put(currentIndex, {}) catch return;
-        affectedPlayers.append(currentIndex) catch return;
-
-        const dirVec = game.directionToVec2(dir);
-        for (playerList.items[currentIndex].items) |segment| {
-            const nextX = @as(i32, @intFromFloat(segment.x + dirVec.x));
-            const nextY = @as(i32, @intFromFloat(segment.y + dirVec.y));
-            const nextBlock = game.getBlockWorldGrid(nextX, nextY);
-
-            if (nextBlock == bdy) {
-                if (findPlayerAtPosition(nextX, nextY)) |nextPlayerIndex| {
-                    if (!visitedPlayers.contains(nextPlayerIndex)) {
-                        queue.append(nextPlayerIndex) catch return;
-                    }
-                }
-            }
-
-            if (nextBlock == box) {
-                const boxVec = rl.Vector2{ .x = @floatFromInt(nextX), .y = @floatFromInt(nextY) };
-                boxes.movePos(boxVec, dir);
-            }
-        }
-    }
-
-    for (affectedPlayers.items) |pIndex| {
-        for (playerList.items[pIndex].items) |segment| {
-            game.setBlockWorldGrid(segment.x, segment.y, air);
-        }
-    }
-
-    const dirVector = game.directionToVec2(dir);
-    for (affectedPlayers.items) |pIndex| {
-        for (playerList.items[pIndex].items) |*segment| {
-            segment.*.x = segment.x + dirVector.x;
-            segment.*.y = segment.y + dirVector.y;
-        }
-    }
-
-    for (affectedPlayers.items) |pIndex| {
-        for (playerList.items[pIndex].items) |segment| {
-            game.setBlockWorldGrid(segment.x, segment.y, bdy);
-        }
-    }
 }
 
 fn canGroupFall(boxGroup: std.ArrayList(rl.Vector2)) bool {
@@ -537,12 +346,22 @@ fn canPlayerGroupFall(boxGroup: std.ArrayList(rl.Vector2)) bool {
         if (gridY + 1 >= 9) return false;
         const blockBelow = game.getBlockWorldGrid(gridX, gridY + 1);
         if (blockBelow == sol or blockBelow == frt) return false;
-        if (blockBelow == box) {
-            if (!boxes.canGroupMove(boxGroup, direction.down)) return false;
-        }
-        if (blockBelow == bdy) {
-            if (!canGroupMove(boxGroup, direction.down)) return false;
+        if (blockBelow == box or blockBelow == bdy) {
+            if (!movement.canPush(@intFromFloat(curBox.x), @intFromFloat(curBox.y), direction.down)) return false;
         }
     }
     return true;
+}
+
+fn isOwnBodyAt(x: i32, y: i32) bool {
+    if (currentPlayerIndex >= playerList.items.len) return false;
+
+    for (playerList.items[currentPlayerIndex].items) |segment| {
+        if (@as(i32, @intFromFloat(segment.x)) == x and
+            @as(i32, @intFromFloat(segment.y)) == y)
+        {
+            return true;
+        }
+    }
+    return false;
 }

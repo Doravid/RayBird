@@ -2,6 +2,7 @@
 const rl = @import("raylib");
 const std = @import("std");
 const gui = @import("raygui");
+const movement = @import("movement.zig");
 const player = @import("player.zig");
 const boxes = @import("boxes.zig");
 const levelManager = @import("maps/levelManager.zig");
@@ -99,8 +100,7 @@ pub fn runGame() !void {
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or DEL key
         // Update
-        player.updateGravity();
-        boxes.updateBoxGravity();
+        movement.updateGravity();
         player.updatePos();
         fullScreen();
 
@@ -347,22 +347,7 @@ pub fn directionToVec2(dir: player.direction) rl.Vector2 {
 }
 pub fn posMoveable(x: i32, y: i32, direction: player.direction) bool {
     const blk = getBlockWorldGrid(x, y);
-    if (blk == box) {
-        if (direction == player.direction.up or direction == player.direction.down) {
-            check_groups: {
-                const current: rl.Vector2 = rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y) };
-                const twoAway: rl.Vector2 = if (direction != player.direction.up)
-                    rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y - 2) }
-                else
-                    rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y + 2) };
-                const currentGroup = boxes.boxGroupAtCoord(current) catch break :check_groups;
-                const twoAwayGroup = boxes.boxGroupAtCoord(twoAway) catch break :check_groups;
-                if (currentGroup.items.ptr == twoAwayGroup.items.ptr) return false;
-            }
-        }
-        return boxes.canMoveBox(x, y, direction);
-    }
-    if (blk == bdy) {
+    if (blk == bdy or blk == box) {
         return player.canPlayerAtPosMove(x, y, direction);
     }
     if (blk == vic and player.fruitNumber > 0) {
