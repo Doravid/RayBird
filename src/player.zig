@@ -141,23 +141,15 @@ fn movePlayer(dir: direction) void {
         i -= 1;
         playerList.items[currentPlayerIndex].items[i] = playerList.items[currentPlayerIndex].items[i - 1];
     }
-    switch (dir) {
-        direction.right => {
-            playerList.items[currentPlayerIndex].items[0].x += 1;
-        },
-        direction.left => {
-            playerList.items[currentPlayerIndex].items[0].x -= 1;
-        },
-        direction.up => {
-            playerList.items[currentPlayerIndex].items[0].y -= 1;
-        },
-        direction.down => {
-            playerList.items[currentPlayerIndex].items[0].y += 1;
-        },
-    }
+    const newHeadPos: rl.Vector2 = switch (dir) {
+        direction.right => rl.Vector2.add(playerList.items[currentPlayerIndex].items[0], rl.Vector2{ .x = 1, .y = 0 }),
+        direction.left => rl.Vector2.add(playerList.items[currentPlayerIndex].items[0], rl.Vector2{ .x = -1, .y = 0 }),
+        direction.up => rl.Vector2.add(playerList.items[currentPlayerIndex].items[0], rl.Vector2{ .x = 0, .y = -1 }),
+        direction.down => rl.Vector2.add(playerList.items[currentPlayerIndex].items[0], rl.Vector2{ .x = 0, .y = 1 }),
+    };
     std.log.info("body x / y {} {}", .{ @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].x)), @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].y)) });
 
-    const newHead = game.getBlockWorldGrid(@intFromFloat(playerList.items[currentPlayerIndex].items[0].x), @intFromFloat(playerList.items[currentPlayerIndex].items[0].y));
+    const newHead = game.getBlockWorldGrid(@intFromFloat(newHeadPos.x), @intFromFloat(newHeadPos.y));
 
     if (newHead == blockType.vic) {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
@@ -167,19 +159,9 @@ fn movePlayer(dir: direction) void {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
         return;
     }
-    if (newHead == blockType.box) {
-        const headX = @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].x));
-        const headY = @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].y));
-        movement.applyPush(headX, headY, dir);
-    }
-    if (newHead == blockType.bdy) {
-        const headX = @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].x));
-        const headY = @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].y));
-        if (findPlayerAtPosition(headX, headY)) |otherPlayerIndex| {
-            if (otherPlayerIndex != currentPlayerIndex) {
-                movement.applyPush(headX, headY, dir);
-            }
-        }
+    if (newHead == blockType.box or newHead == blockType.bdy) {
+        std.debug.print("pushing: {}, {} from {}, {}", .{ newHeadPos.x, newHeadPos.y, playerList.items[currentPlayerIndex].items[0].x, playerList.items[currentPlayerIndex].items[0].y });
+        movement.applyPush(@intFromFloat(newHeadPos.x), @intFromFloat(newHeadPos.y), dir);
     }
     if (newHead == blockType.frt) {
         fruitNumber -= 1;
@@ -190,6 +172,7 @@ fn movePlayer(dir: direction) void {
     } else {
         game.setBlockWorldGrid((tail.x), (tail.y), air);
     }
+    playerList.items[currentPlayerIndex].items[0] = newHeadPos;
     if (playerList.items[currentPlayerIndex].items.len > 0) game.setBlockWorldGrid((playerList.items[currentPlayerIndex].items[0].x), (playerList.items[currentPlayerIndex].items[0].y), bdy);
 }
 
@@ -244,113 +227,6 @@ pub fn findPlayerAtPosition(x: i32, y: i32) ?usize {
         }
     }
     return null;
-}
-
-fn canGroupFall(boxGroup: std.ArrayList(rl.Vector2)) bool {
-    for (boxGroup.items) |curBox| {
-        const gridX = @as(i32, @intFromFloat(curBox.x));
-        const gridY = @as(i32, @intFromFloat(curBox.y));
-        if (gridY + 1 >= 9) return false;
-        const blockBelow = game.getBlockWorldGrid(gridX, gridY + 1);
-        if (blockBelow == sol or blockBelow == frt) return false;
-        if (blockBelow == box) {
-            if (!boxes.canGroupMove(boxGroup, direction.down)) return false;
-        }
-        if (boxes.isPlayerAtPosition(@floatFromInt(gridX), @floatFromInt(gridY + 1))) return false;
-    }
-    return true;
-}
-
-fn fallPlayerGroup(playerIndex: usize) void {
-    if (playerIndex >= playerList.items.len) return;
-    for (playerList.items[playerIndex].items) |*segment| {
-        segment.*.y += 10 * rl.getFrameTime();
-    }
-}
-
-pub fn canGroupMove(boxGroup: std.ArrayList(rl.Vector2), dir: direction) bool {
-    var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-    var affectedGroups = std.ArrayList(usize).init(allocator);
-    var visitedGroups = std.AutoHashMap(usize, void).init(allocator);
-    var queue = std.ArrayList(usize).init(allocator);
-    var startIndex: ?usize = null;
-    for (playerList.items, 0..) |group, i| {
-        const ptr: std.ArrayList(rl.Vector2) = group;
-        if (ptr.items.ptr == boxGroup.items.ptr) {
-            startIndex = i;
-            break;
-        }
-    }
-    if (startIndex == null) return false;
-    queue.append(startIndex.?) catch return false;
-    while (queue.items.len > 0) {
-        const currentIndex = queue.orderedRemove(0);
-        if (visitedGroups.contains(currentIndex)) continue;
-        visitedGroups.put(currentIndex, {}) catch return false;
-        affectedGroups.append(currentIndex) catch return false;
-        for (playerList.items[currentIndex].items) |curBox| {
-            const dirVec = boxes.directionToOffset(dir);
-            const nextX = @as(i32, @intFromFloat(curBox.x)) + dirVec.x;
-            const nextY = @as(i32, @intFromFloat(curBox.y)) + dirVec.y;
-            const nextBlock = game.getBlockWorldGrid(nextX, nextY);
-            if (nextBlock == box) {
-                const nextVec = rl.Vector2{ .x = @floatFromInt(nextX), .y = @floatFromInt(nextY) };
-                const nextGroup = playerGroupAtCoord(nextVec) catch continue;
-                for (playerList.items, 0..) |groupPtr, i| {
-                    const ptr: std.ArrayList(rl.Vector2) = groupPtr;
-                    const ptr2: std.ArrayList(rl.Vector2) = nextGroup;
-                    if (ptr.items.ptr == ptr2.items.ptr) {
-                        if (!visitedGroups.contains(i)) queue.append(i) catch return false;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    var movingPositions = std.AutoHashMap(boxes.Vec2Hash, void).init(allocator);
-    for (affectedGroups.items) |groupIndex| {
-        for (playerList.items[groupIndex].items) |pos| {
-            const hashPos = boxes.Vec2Hash{ .x = @intFromFloat(pos.x), .y = @intFromFloat(pos.y) };
-            movingPositions.put(hashPos, {}) catch return false;
-        }
-    }
-    for (affectedGroups.items) |groupIndex| {
-        for (playerList.items[groupIndex].items) |curBox| {
-            const dirVec = boxes.directionToOffset(dir);
-            const nextX = @as(i32, @intFromFloat(curBox.x)) + dirVec.x;
-            const nextY = @as(i32, @intFromFloat(curBox.y)) + dirVec.y;
-            if (!boxes.isDestinationValid(nextX, nextY, &movingPositions)) return false;
-        }
-    }
-    return true;
-}
-
-pub fn playerGroupAtCoord(coord: rl.Vector2) !std.ArrayList(rl.Vector2) {
-    for (playerList.items) |boxGroup| {
-        if (playerGroupHasCoord(coord, boxGroup)) return boxGroup;
-    }
-    return boxes.noGroup.noGroupFound;
-}
-fn playerGroupHasCoord(coord: rl.Vector2, boxGroup: std.ArrayList(rl.Vector2)) bool {
-    for (boxGroup.items) |curBox| {
-        if (curBox.x == coord.x and curBox.y == coord.y) return true;
-    }
-    return false;
-}
-fn canPlayerGroupFall(boxGroup: std.ArrayList(rl.Vector2)) bool {
-    for (boxGroup.items) |curBox| {
-        const gridX = @as(i32, @intFromFloat(curBox.x));
-        const gridY = @as(i32, @intFromFloat(curBox.y));
-        if (gridY + 1 >= 9) return false;
-        const blockBelow = game.getBlockWorldGrid(gridX, gridY + 1);
-        if (blockBelow == sol or blockBelow == frt) return false;
-        if (blockBelow == box or blockBelow == bdy) {
-            if (!movement.canPush(@intFromFloat(curBox.x), @intFromFloat(curBox.y), direction.down)) return false;
-        }
-    }
-    return true;
 }
 
 fn isOwnBodyAt(x: i32, y: i32) bool {
