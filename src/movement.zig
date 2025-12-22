@@ -4,6 +4,7 @@ const rl = @import("raylib");
 const game = @import("game.zig");
 const boxes = @import("boxes.zig");
 const player = @import("player.zig");
+const levelManager = @import("maps/levelManager.zig");
 
 const blockType = game.blockType;
 const air = blockType.air;
@@ -260,6 +261,10 @@ fn handleGravity(
     for (groups.?.items) |gr| {
         for (groupCells(gr)) |*c| {
             c.*.y += speed * dt;
+            if (c.y >= 8) {
+                levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
+            }
+            std.debug.print("{}\n", .{c.y});
         }
     }
 }
@@ -335,7 +340,6 @@ fn validateMove(groups: []GroupRef, dir: Direction, allocator: std.mem.Allocator
             }, {}) catch return false;
         }
     }
-
     for (groups) |g| {
         for (groupCells(g)) |c| {
             const nx = @as(i32, @intFromFloat(c.x)) + d.x;

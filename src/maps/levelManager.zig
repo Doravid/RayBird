@@ -30,14 +30,6 @@ pub const level = struct {
     }
 };
 
-// pub const moveable = struct {
-//     boxes: []rl.Vector2,
-//     const Self = @This();
-//     pub fn init(boxes: []rl.Vector2) Self {
-//         return .{ .player = boxes };
-//     }
-// };
-
 pub var currentLevelNum = 0;
 
 // Embedded level files for WASM
