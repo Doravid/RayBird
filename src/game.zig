@@ -24,7 +24,6 @@ var waterTexture: rl.RenderTexture = undefined;
 // pub var sounds = std.ArrayList(rl.Sound).init(std.heap.c_allocator);
 
 pub var body_textures: [4]rl.Texture2D = undefined;
-var bloomShader: rl.Shader = undefined;
 var pixelShader: rl.Shader = undefined;
 var finePixelShader: rl.Shader = undefined;
 var sizeLoc: i32 = undefined;
@@ -33,9 +32,6 @@ var renderHeightLoc: i32 = undefined;
 
 pub var boxSize: i32 = 1920 / 16;
 pub fn runGame() !void {
-    // try sounds.append(rl.loadSound("resources/audio/move.mp3"));
-    // try sounds.append(rl.loadSound("resources/audio/move2.mp3"));
-
     const move = rl.loadImage("resources/box.png");
     const plat = rl.loadImage("resources/dirt1.png");
     const plat2 = rl.loadImage("resources/dirt2.png");
@@ -51,7 +47,6 @@ pub fn runGame() !void {
     const body3 = rl.loadImage("resources/body2.png");
     const body4 = rl.loadImage("resources/body4.png");
 
-    bloomShader = rl.loadShader(null, "resources/shaders/bloom.fs");
     pixelShader = rl.loadShader(null, "resources/shaders/pixel.fs");
     finePixelShader = rl.loadShader(null, "resources/shaders/pixel_fine.fs");
 
@@ -144,12 +139,18 @@ pub fn runGame() !void {
                     rl.drawText(text, @divTrunc(boxSize, 12), @divTrunc(boxSize, 6), @divTrunc(boxSize, 5), Color.black);
                     rl.drawText("Press 0-9 to select player group", @divTrunc(boxSize, 12), @divTrunc(boxSize, 7) * 3, @divTrunc(boxSize, 5), Color.black);
                 }
+
+                std.debug.print("curr level num: {}", .{levelManager.getCurrentLevelNum()});
+
                 drawWater();
             }
             player.drawPlayer(&body_textures);
             boxes.drawBoxes(move_t);
             inMenus = levelManager.checkPause();
             drawWater();
+            // if (levelManager.getCurrentLevelNum() == 6) {
+            //     rl.drawText("Congratulations!!!! You WIN!!!!", @divTrunc(rl.getScreenWidth(), 4), @divTrunc(rl.getScreenHeight(), 2), @divTrunc(boxSize, 2), Color.black);
+            // }
         }
         rl.drawFPS(2, 2);
     }
@@ -219,7 +220,7 @@ pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Co
         rl.drawTriangle(p2, p1, p0, color);
     }
 }
-//Draws all of the boxes in the map each frame.
+//Draws all non dynamic blocks of the map each frame.
 fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, grass_t: rl.Texture) void {
     for (levelManager.mat16x9, 0..) |row, rIndex| {
         for (row, 0..) |element, cIndex| {
@@ -230,7 +231,6 @@ fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit
                 vic => drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
                 frt => drawFruit(fruit_t, boxSize * rw, col * boxSize),
                 spk => drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
-                // box => drawTexture(move_t, boxSize * rw, col * boxSize, rl.Color.white),
                 else => undefined,
             }
         }
@@ -243,7 +243,7 @@ fn drawFruit(fruit_t: rl.Texture, posX: i32, posY: i32) void {
     drawTexture(fruit_t, posX, posY + offset, rl.Color.white);
 }
 fn drawDirt(grass_t: rl.Texture, plat_t: rl.Texture, plat2_t: rl.Texture, posX: i32, posY: i32, color: rl.Color) void {
-    if (getBlockAt(@floatFromInt(posX), @floatFromInt(posY - boxSize)) != sol) {
+    if (getBlockAtPixelCoord(@floatFromInt(posX), @floatFromInt(posY - boxSize)) != sol) {
         drawTexture(grass_t, posX, posY, color);
     } else {
         var hash = @as(u32, @bitCast(posX));
@@ -347,21 +347,8 @@ pub fn directionToVec2(dir: player.direction) rl.Vector2 {
         },
     }
 }
-pub fn posMoveable(x: i32, y: i32, direction: player.direction) bool {
-    const blk = getBlockWorldGrid(x, y);
-    if (blk == bdy or blk == box) {
-        return player.canPlayerAtPosMove(x, y, direction);
-    }
-    if (blk == vic and player.fruitNumber > 0) {
-        return false;
-    }
-    if (blk == air or blk == frt or blk == vic or blk == spk) {
-        return true;
-    }
-    return false;
-}
 //Returns the block at a given x,y coordinate (in pixel coordinates)
-pub fn getBlockAt(x: f32, y: f32) blockType {
+pub fn getBlockAtPixelCoord(x: f32, y: f32) blockType {
     const new_x = x / @as(f32, @floatFromInt(boxSize));
     const new_y = y / @as(f32, @floatFromInt(boxSize));
     if (new_x >= 16 or new_y >= 9 or new_x < 0 or new_y < 0) {

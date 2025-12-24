@@ -51,7 +51,7 @@ pub fn loadLevelEditor() void {
     if (rl.isMouseButtonPressed(rl.MouseButton.left) and !waitingOnInput) {
         const pos = rl.getMousePosition();
         std.debug.print("x: {}, y: {} \n", .{ pos.x, pos.y });
-        const replacedBlock = game.getBlockAt(pos.x, pos.y);
+        const replacedBlock = game.getBlockAtPixelCoord(pos.x, pos.y);
         if (currentBlock != bdy and currentBlock != box) game.setBlockAt(pos.x, pos.y, currentBlock);
         if (currentBlock == bdy and replacedBlock != bdy) {
             const x: i32 = @divTrunc(@as(i32, @intFromFloat(pos.x)), game.boxSize);

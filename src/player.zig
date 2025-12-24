@@ -98,6 +98,7 @@ fn undo() void {
     playerList = undoHistory.pop();
 
     levelManager.mat16x9 = mapHistory.pop();
+    fruitNumber = numFruit();
 }
 
 fn redo() void {
@@ -116,6 +117,7 @@ fn redo() void {
         return;
     };
     playerList = redoHistory.pop();
+    fruitNumber = numFruit();
 }
 fn movePlayer(dir: direction) void {
     redoHistory.clearAndFree();
@@ -165,6 +167,20 @@ fn movePlayer(dir: direction) void {
     }
     playerList.items[currentPlayerIndex].items[0] = newHeadPos;
     if (playerList.items[currentPlayerIndex].items.len > 0) game.setBlockWorldGrid((playerList.items[currentPlayerIndex].items[0].x), (playerList.items[currentPlayerIndex].items[0].y), bdy);
+    var spkVist = false;
+    var standing = false;
+    for (playerList.items[currentPlayerIndex].items) |cell| {
+        const curBlock = game.getBlockWorldGrid(@intFromFloat(cell.x), @intFromFloat(cell.y + 1));
+        if (curBlock == spk) {
+            spkVist = true;
+        }
+        if (curBlock == frt or curBlock == sol) {
+            standing = true;
+        }
+    }
+    if (spkVist and !standing) {
+        undo();
+    }
 }
 
 pub fn drawPlayer(textures: []const rl.Texture) void {

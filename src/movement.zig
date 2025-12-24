@@ -246,6 +246,7 @@ fn handleGravity(
     {
         if (falling.*) {
             snapGroupToGrid(g);
+            handlePlayerStop(g);
             falling.* = false;
         }
         return;
@@ -261,10 +262,6 @@ fn handleGravity(
     for (groups.?.items) |gr| {
         for (groupCells(gr)) |*c| {
             c.*.y += speed * dt;
-            if (c.y >= 8) {
-                levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
-            }
-            std.debug.print("{}\n", .{c.y});
         }
     }
 }
@@ -355,4 +352,27 @@ fn validateMove(groups: []GroupRef, dir: Direction, allocator: std.mem.Allocator
     }
 
     return true;
+}
+
+fn handlePlayerStop(
+    reference: GroupRef,
+) void {
+    var spkVist = false;
+    var standing = false;
+    for (groupCells(reference)) |*cell| {
+        if (cell.y >= 8) {
+            levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
+        }
+        const curBlock = game.getBlockWorldGrid(@intFromFloat(cell.x), @intFromFloat(cell.y + 1));
+        if (curBlock == spk) {
+            spkVist = true;
+        }
+        if (curBlock == frt or curBlock == sol) {
+            standing = true;
+        }
+    }
+
+    if (spkVist and !standing) {
+        levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
+    }
 }
