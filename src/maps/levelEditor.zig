@@ -154,7 +154,7 @@ fn writeLevelToFile(level1: levelManager.level, name: [64:0]u8) void {
     const allocator = std.heap.c_allocator;
     const name_slice = std.mem.sliceTo(&name, 0);
     const name_len = name_slice.len;
-    const prefix = "./src/maps/";
+    const prefix = "resources/maps/";
     const suffix = ".json";
     const path = allocator.alloc(u8, prefix.len + name_len + suffix.len) catch |err| {
         std.debug.print("Failed to allocate: {}\n", .{err});

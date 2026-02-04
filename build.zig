@@ -43,4 +43,9 @@ pub fn build(b: *std.Build) !void {
     const run_step = b.step("run", "Run test");
     run_step.dependOn(&run_cmd.step);
     b.installArtifact(exe);
+    b.installDirectory(.{
+        .source_dir = b.path("resources"),
+        .install_dir = .bin,
+        .install_subdir = "resources",
+    });
 }

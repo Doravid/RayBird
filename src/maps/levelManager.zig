@@ -20,6 +20,7 @@ pub var mat16x9 = [9][16]game.blockType{
     [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
 };
+pub var dynamic_map = std.ArrayList(std.ArrayList(game.blockType)).init(std.heap.c_allocator);
 pub const level = struct {
     map: [9][16]game.blockType,
     player: [][]rl.Vector2,
@@ -74,7 +75,7 @@ pub fn loadLevelFromJson(name: u32) level {
             return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
         }
     } else {
-        const prefix = "./src/maps/level";
+        const prefix = "resources/maps/level";
         const suffix = ".json";
 
         const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
@@ -191,7 +192,6 @@ pub fn loadMenu() bool {
         const button_height = 1.25 * screen_width_f / 16;
         const button_width = 4.0 * screen_width_f / 16;
         const button_x = (screen_width_f - @as(f32, @floatFromInt(game.boxSize * 4))) / 2.0;
-
         const levelSelect_button = gui.guiButton(rl.Rectangle{ .height = button_height, .width = button_width, .x = button_x, .y = 1.5 * screen_width_f / 16 }, "Level Select");
         const levelEditor_button = gui.guiButton(rl.Rectangle{ .height = button_height, .width = button_width, .x = button_x, .y = 3 * screen_width_f / 16 }, "Level Editor");
         const options_button = gui.guiButton(rl.Rectangle{ .height = button_height, .width = button_width, .x = button_x, .y = 4.5 * screen_width_f / 16 }, "Options");

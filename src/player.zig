@@ -23,7 +23,7 @@ pub var undoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).in
 pub var redoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).init(std.heap.c_allocator);
 var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.c_allocator);
 
-//For each player 0 is always the head items.len is always the floating tail (The square right behind the tail. )
+//For each player index 0 is always the head items.len is always the floating tail (The square right behind the tail. )
 pub var playerList = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 
 pub fn numFruit() i32 {

@@ -21,7 +21,6 @@ const Color = rl.Color;
 const KeyboardKey = rl.KeyboardKey;
 var backgroundTexture: rl.RenderTexture = undefined;
 var waterTexture: rl.RenderTexture = undefined;
-// pub var sounds = std.ArrayList(rl.Sound).init(std.heap.c_allocator);
 
 pub var body_textures: [4]rl.Texture2D = undefined;
 var pixelShader: rl.Shader = undefined;
@@ -29,6 +28,9 @@ var finePixelShader: rl.Shader = undefined;
 var sizeLoc: i32 = undefined;
 var renderWidthLoc: i32 = undefined;
 var renderHeightLoc: i32 = undefined;
+
+var cameraOffsetX: i32 = 0;
+var cameraOffsetY: i32 = 0;
 
 pub var boxSize: i32 = 1920 / 16;
 pub fn runGame() !void {
@@ -46,6 +48,13 @@ pub fn runGame() !void {
     const body2 = rl.loadImage("resources/body1.png");
     const body3 = rl.loadImage("resources/body2.png");
     const body4 = rl.loadImage("resources/body4.png");
+
+    var montserrat = rl.loadFontEx("resources/fonts/Montserrat-Bold.ttf", 100, null);
+
+    rl.genTextureMipmaps(&montserrat.texture);
+    rl.setTextureFilter(montserrat.texture, rl.TextureFilter.trilinear);
+
+    gui.guiSetFont(montserrat);
 
     pixelShader = rl.loadShader(null, "resources/shaders/pixel.fs");
     finePixelShader = rl.loadShader(null, "resources/shaders/pixel_fine.fs");
@@ -110,10 +119,10 @@ pub fn runGame() !void {
 
         if (inMenus) {
             drawWater();
-
             inMenus = levelManager.loadMenu();
         } else {
             drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, grass_t);
+            handleMouse();
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
                     sol => plat_t,
@@ -140,17 +149,12 @@ pub fn runGame() !void {
                     rl.drawText("Press 0-9 to select player group", @divTrunc(boxSize, 12), @divTrunc(boxSize, 7) * 3, @divTrunc(boxSize, 5), Color.black);
                 }
 
-                std.debug.print("curr level num: {}", .{levelManager.getCurrentLevelNum()});
-
                 drawWater();
             }
             player.drawPlayer(&body_textures);
             boxes.drawBoxes(move_t);
             inMenus = levelManager.checkPause();
             drawWater();
-            // if (levelManager.getCurrentLevelNum() == 6) {
-            //     rl.drawText("Congratulations!!!! You WIN!!!!", @divTrunc(rl.getScreenWidth(), 4), @divTrunc(rl.getScreenHeight(), 2), @divTrunc(boxSize, 2), Color.black);
-            // }
         }
         rl.drawFPS(2, 2);
     }
@@ -264,7 +268,8 @@ fn drawDirt(grass_t: rl.Texture, plat_t: rl.Texture, plat2_t: rl.Texture, posX: 
 }
 pub fn drawTexture(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color) void {
     const source = rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(texture.width), .height = @floatFromInt(texture.height) };
-    const dest = rl.Rectangle{ .x = @floatFromInt(posX), .y = @floatFromInt(posY), .width = @floatFromInt(boxSize), .height = @floatFromInt(boxSize) };
+
+    const dest = rl.Rectangle{ .x = @floatFromInt(posX), .y = @floatFromInt(posY + cameraOffsetY), .width = @floatFromInt(boxSize), .height = @floatFromInt(boxSize) };
     const origin = rl.Vector2{ .x = 0, .y = 0 };
     const rotation = 0.0;
     rl.drawTexturePro(texture, source, dest, origin, rotation, tint);
@@ -322,7 +327,7 @@ fn drawWater() void {
     if (builtin.target.os.tag != .emscripten) {
         rl.beginShaderMode(finePixelShader);
     }
-    rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.init(255, 255, 255, 255));
+    rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = @floatFromInt(cameraOffsetY) }, rl.Color.init(255, 255, 255, 255));
     rl.endShaderMode();
 }
 fn fullScreen() void {
@@ -388,4 +393,14 @@ pub fn setWindowSizeFromVector(ScreenSize: rl.Vector2) void {
     gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 64));
     backgroundTexture = rl.loadRenderTexture(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
     waterTexture = rl.loadRenderTexture(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
+}
+fn handleMouse() void {
+    const x = rl.getMouseWheelMove();
+    if (x > 0) {
+        cameraOffsetY += 30;
+        std.debug.print("{}\n", .{cameraOffsetY});
+    } else if (x < 0 and cameraOffsetY > 0) {
+        cameraOffsetY -= 30;
+        std.debug.print("{}\n", .{cameraOffsetY});
+    }
 }
