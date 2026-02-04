@@ -203,7 +203,6 @@ pub fn loadMenu() bool {
         if (levelEditor_button == 1) {
             currentMenu = menuType.levelEditor;
             player.clearPlayerAndMap();
-            for (player.playerList.items) |p| p.deinit();
             player.playerList.clearAndFree();
             return false;
         }

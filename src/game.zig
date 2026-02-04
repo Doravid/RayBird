@@ -22,7 +22,7 @@ const KeyboardKey = rl.KeyboardKey;
 var backgroundTexture: rl.RenderTexture = undefined;
 var waterTexture: rl.RenderTexture = undefined;
 
-pub var body_textures: [4]rl.Texture2D = undefined;
+pub var body_textures: [6]rl.Texture2D = undefined;
 var pixelShader: rl.Shader = undefined;
 var finePixelShader: rl.Shader = undefined;
 var sizeLoc: i32 = undefined;
@@ -44,10 +44,13 @@ pub fn runGame() !void {
     const spike = rl.loadImage("resources/spike.png");
     const cloud = rl.loadImage("resources/cloud1.png");
 
-    const body1 = rl.loadImage("resources/head.png");
-    const body2 = rl.loadImage("resources/body1.png");
-    const body3 = rl.loadImage("resources/body2.png");
-    const body4 = rl.loadImage("resources/body4.png");
+    const body0 = rl.loadImage("resources/green_head.png");
+    const body1 = rl.loadImage("resources/green_body1.png");
+    const body2 = rl.loadImage("resources/green_body2.png");
+
+    const body3 = rl.loadImage("resources/blue_head.png");
+    const body4 = rl.loadImage("resources/blue_body1.png");
+    const body5 = rl.loadImage("resources/blue_body2.png");
 
     var montserrat = rl.loadFontEx("resources/fonts/Montserrat-Bold.ttf", 100, null);
 
@@ -75,12 +78,14 @@ pub fn runGame() !void {
     const spike_t = rl.loadTextureFromImage(spike);
     const cloud_t = rl.loadTextureFromImage(cloud);
 
+    const body0_t = rl.loadTextureFromImage(body0);
     const body1_t = rl.loadTextureFromImage(body1);
     const body2_t = rl.loadTextureFromImage(body2);
     const body3_t = rl.loadTextureFromImage(body3);
     const body4_t = rl.loadTextureFromImage(body4);
+    const body5_t = rl.loadTextureFromImage(body5);
 
-    body_textures = [_]rl.Texture2D{ body1_t, body2_t, body3_t, body4_t };
+    body_textures = [_]rl.Texture2D{ body0_t, body1_t, body2_t, body3_t, body4_t, body5_t };
 
     defer rl.unloadImage(move);
     defer rl.unloadImage(plat);
