@@ -137,7 +137,6 @@ pub fn setLevel(levelNumber: u32) void {
             return;
         };
     }
-    // std.debug.print("players: {any}", .{player.playerList.items});
     for (levelA.boxes) |slice| {
         var group = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
         group.appendSlice(slice) catch |err| {
@@ -220,7 +219,6 @@ pub fn loadMenu() bool {
         const height: f32 = @floatFromInt(game.boxSize);
         const center: f32 = @floatFromInt(@divTrunc(rl.getScreenWidth(), 2));
         //RESOLUTION CONTROLS
-        gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 48));
 
         _ = gui.guiButton(rl.Rectangle{ .height = height, .width = width, .x = center - width / 2, .y = height * 6 }, resolutions[curRes]);
         const leftButton = gui.guiButton(rl.Rectangle{ .height = height / 2, .width = height / 2, .x = center - (width + height * 2) / 2, .y = height * 6 + height / 4 }, "<");
@@ -233,7 +231,6 @@ pub fn loadMenu() bool {
             curRes += 1;
             game.setWindowSizeFromVector(resolutionVecs[curRes]);
         }
-        gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 64));
         //GO BACK BUTTON
         const backButton = gui.guiButton(rl.Rectangle{ .height = height / 2, .width = width / 2, .x = center - width / 4, .y = height * 7.5 }, "Go Back");
         if (backButton == 1) currentMenu = menuType.main;

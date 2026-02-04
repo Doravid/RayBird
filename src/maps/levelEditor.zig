@@ -29,10 +29,6 @@ pub const emptyMap = [9][16]blockType{
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
 };
-pub fn initLevelEditor() void {
-    levelManager.mat16x9 = emptyMap;
-}
-// pub var body = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
 pub var curBoxGroupNumber: usize = 0;
 pub var curPlayerGroupNumber: usize = 0;
 var userInput: [64:0]u8 = undefined;

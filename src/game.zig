@@ -53,7 +53,6 @@ pub fn runGame() !void {
 
     rl.genTextureMipmaps(&montserrat.texture);
     rl.setTextureFilter(montserrat.texture, rl.TextureFilter.trilinear);
-
     gui.guiSetFont(montserrat);
 
     pixelShader = rl.loadShader(null, "resources/shaders/pixel.fs");
@@ -390,7 +389,7 @@ pub fn setBlockWorldGrid(x: f32, y: f32, block: blockType) void {
 pub fn setWindowSizeFromVector(ScreenSize: rl.Vector2) void {
     rl.setWindowSize(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
     boxSize = @divExact(rl.getScreenWidth(), 16);
-    gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 64));
+    gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 32));
     backgroundTexture = rl.loadRenderTexture(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
     waterTexture = rl.loadRenderTexture(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
 }

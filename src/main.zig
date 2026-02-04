@@ -16,7 +16,7 @@ pub fn main() anyerror!void {
     }
     rl.setTargetFPS(3000);
     rl.setExitKey(rl.KeyboardKey.delete);
-    gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, 30);
+    gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 32));
 
     try game.runGame();
 }
