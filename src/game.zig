@@ -230,17 +230,20 @@ pub fn drawSmoothCircle(x: f32, y: f32, radius: f32, segments: i32, color: rl.Co
 }
 //Draws all non dynamic blocks of the map each frame.
 fn drawMap(plat_t: rl.Texture, plat2_t: rl.Texture, victory_t: rl.Texture, fruit_t: rl.Texture, spike_t: rl.Texture, grass_t: rl.Texture) void {
-    for (levelManager.mat16x9, 0..) |row, rIndex| {
-        for (row, 0..) |element, cIndex| {
-            const rw: i32 = @intCast(cIndex);
-            const col: i32 = @intCast(rIndex);
-            switch (element) {
-                sol => drawDirt(grass_t, plat_t, plat2_t, boxSize * rw, col * boxSize, rl.Color.white),
-                vic => drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
-                frt => drawFruit(fruit_t, boxSize * rw, col * boxSize),
-                spk => drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
-                else => undefined,
-            }
+    var iterator = levelManager.dynamic_map.iterator();
+    while (iterator.next()) |entry| {
+        const key: std.meta.Tuple(&.{ i32, i32 }) = entry.key_ptr.*;
+        const value: blockType = entry.value_ptr.*;
+
+        const rw: i32 = key[0];
+        const col: i32 = key[1];
+
+        switch (value) {
+            sol => drawDirt(grass_t, plat_t, plat2_t, boxSize * rw, col * boxSize, rl.Color.white),
+            vic => drawTexture(victory_t, boxSize * rw, col * boxSize, rl.Color.white),
+            frt => drawFruit(fruit_t, boxSize * rw, col * boxSize),
+            spk => drawTexture(spike_t, boxSize * rw, col * boxSize, rl.Color.white),
+            else => undefined,
         }
     }
 }
@@ -356,39 +359,29 @@ pub fn directionToVec2(dir: player.direction) rl.Vector2 {
         },
     }
 }
-//Returns the block at a given x,y coordinate (in pixel coordinates)
 pub fn getBlockAtPixelCoord(x: f32, y: f32) blockType {
     const new_x = x / @as(f32, @floatFromInt(boxSize));
     const new_y = y / @as(f32, @floatFromInt(boxSize));
-    if (new_x >= 16 or new_y >= 9 or new_x < 0 or new_y < 0) {
-        std.debug.print("{}, {} is out of bounds (getBlockAt)\n", .{ @as(i32, @intFromFloat(x)), @as(i32, @intFromFloat(y)) });
-        return blockType.null;
-    }
-    return levelManager.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)];
+    return levelManager.dynamic_map.get(.{ @intFromFloat(new_x), @intFromFloat(new_y) }) orelse return air;
 }
 pub fn getBlockWorldGrid(x: i32, y: i32) blockType {
     if (x >= 16 or y >= 9 or x < 0 or y < 0) {
         std.debug.print("{}, {} is out of bounds (getBlockWorldGrid) \n", .{ (x), (y) });
         return blockType.null;
     }
-    return levelManager.mat16x9[@intCast(y)][@intCast(x)];
+    return levelManager.dynamic_map.get(.{ x, y }) orelse return air;
 }
-//Uses screen coords (not box Coords, which are different and used by the mat16x9 array)
-pub fn setBlockAt(x: f32, y: f32, block: blockType) void {
+pub fn setBlockAtPixelCoord(x: f32, y: f32, block: blockType) void {
     const new_x = x / @as(f32, @floatFromInt(boxSize));
     const new_y = y / @as(f32, @floatFromInt(boxSize));
-    if (new_x >= 16 or new_y >= 9 or new_x < 0 or new_y < 0) {
-        std.debug.print("Out of bounds\n", .{});
-        return;
-    }
-    levelManager.mat16x9[@intFromFloat(new_y)][@intFromFloat(new_x)] = block;
+    levelManager.dynamic_map.put(.{ @intFromFloat(new_x), @intFromFloat(new_y) }, block) catch |err| {
+        std.debug.print("setBlockAtPixelCoord {}", .{err});
+    };
 }
 pub fn setBlockWorldGrid(x: f32, y: f32, block: blockType) void {
-    if (x >= 16 or y >= 9 or x < 0 or y < 0) {
-        std.debug.print("Out of bounds\n", .{});
-        return;
-    }
-    levelManager.mat16x9[@intFromFloat(y)][@intFromFloat(x)] = block;
+    levelManager.dynamic_map.put(.{ @intFromFloat(x), @intFromFloat(y) }, block) catch |err| {
+        std.debug.print("setBlockAtPixelCoord {}", .{err});
+    };
 }
 
 pub fn setWindowSizeFromVector(ScreenSize: rl.Vector2) void {

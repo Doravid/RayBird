@@ -18,17 +18,6 @@ const box = blockType.box;
 pub var currentBlock: blockType = sol;
 var waitingOnInput = false;
 
-pub const emptyMap = [9][16]blockType{
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-};
 pub var curBoxGroupNumber: usize = 0;
 pub var curPlayerGroupNumber: usize = 0;
 var userInput: [64:0]u8 = undefined;
@@ -48,7 +37,7 @@ pub fn loadLevelEditor() void {
         const pos = rl.getMousePosition();
         std.debug.print("x: {}, y: {} \n", .{ pos.x, pos.y });
         const replacedBlock = game.getBlockAtPixelCoord(pos.x, pos.y);
-        if (currentBlock != bdy and currentBlock != box) game.setBlockAt(pos.x, pos.y, currentBlock);
+        if (currentBlock != bdy and currentBlock != box) game.setBlockAtPixelCoord(pos.x, pos.y, currentBlock);
         if (currentBlock == bdy and replacedBlock != bdy) {
             const x: i32 = @divTrunc(@as(i32, @intFromFloat(pos.x)), game.boxSize);
             const y: i32 = @divTrunc(@as(i32, @intFromFloat(pos.y)), game.boxSize);
@@ -69,7 +58,7 @@ pub fn loadLevelEditor() void {
                     return;
                 };
                 std.log.debug("vector {}", .{currentPlayer.items[currentPlayer.items.len - 1]});
-                game.setBlockAt((pos.x), (pos.y), currentBlock);
+                game.setBlockAtPixelCoord((pos.x), (pos.y), currentBlock);
             }
         }
         if (currentBlock == box and replacedBlock != box) {
@@ -87,7 +76,7 @@ pub fn loadLevelEditor() void {
                 std.debug.print("Failed to append to box: {}\n", .{err});
                 return;
             };
-            game.setBlockAt((pos.x), (pos.y), currentBlock);
+            game.setBlockAtPixelCoord((pos.x), (pos.y), currentBlock);
         }
     }
     if (waitingOnInput) {

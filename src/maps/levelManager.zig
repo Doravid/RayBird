@@ -20,7 +20,7 @@ pub var mat16x9 = [9][16]game.blockType{
     [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
     [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
 };
-pub var dynamic_map = std.ArrayList(std.ArrayList(game.blockType)).init(std.heap.c_allocator);
+pub var dynamic_map = std.AutoHashMap(std.meta.Tuple(&.{ i32, i32 }), game.blockType).init(std.heap.c_allocator);
 pub const level = struct {
     map: [9][16]game.blockType,
     player: [][]rl.Vector2,
@@ -35,11 +35,11 @@ pub var currentLevelNum = 0;
 
 // Embedded level files for WASM
 const embedded_levels = if (builtin.target.os.tag == .emscripten or true) struct {
-    const level1 = @embedFile("./level1.json");
-    const level2 = @embedFile("./level2.json");
-    const level3 = @embedFile("./level3.json");
-    const level4 = @embedFile("./level4.json");
-    const level5 = @embedFile("./level5.json");
+    const level1 = @embedFile("../../resources/maps/level1.json");
+    const level2 = @embedFile("../../resources/maps/level2.json");
+    const level3 = @embedFile("../../resources/maps/level3.json");
+    const level4 = @embedFile("../../resources/maps/level4.json");
+    const level5 = @embedFile("../../resources/maps/level5.json");
 
     pub fn getLevelData(level_num: u32) ?[]const u8 {
         return switch (level_num) {
@@ -60,7 +60,6 @@ const embedded_levels = if (builtin.target.os.tag == .emscripten or true) struct
 
 pub fn loadLevelFromJson(name: u32) level {
     const alloc = std.heap.c_allocator;
-
     var jsonData: []const u8 = undefined;
     var should_free_json = false;
 
@@ -147,6 +146,15 @@ pub fn setLevel(levelNumber: u32) void {
             std.debug.print("Failed to append box group: {}\n", .{err});
             return;
         };
+    }
+    for (levelA.map, 0..) |layer, i| {
+        for (layer, 0..) |cell, j| {
+            if (cell != air) {
+                dynamic_map.put(.{ @intCast(j), @intCast(i) }, cell) catch |err| {
+                    std.debug.print("{}", .{err});
+                };
+            }
+        }
     }
     mat16x9 = levelA.map;
 

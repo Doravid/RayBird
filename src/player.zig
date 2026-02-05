@@ -23,16 +23,17 @@ pub var undoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).in
 pub var redoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).init(std.heap.c_allocator);
 var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.c_allocator);
 
+var dynamic_mapHistory = std.ArrayList(std.AutoHashMap(std.meta.Tuple(&.{ i32, i32 }), game.blockType)).init(std.heap.c_allocator);
+
 //For each player index 0 is always the head items.len is always the floating tail (The square right behind the tail. )
 pub var playerList = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
 
 pub fn numFruit() i32 {
     var numberOfFruit: i32 = 0;
-    for (levelManager.mat16x9) |map| {
-        for (map) |block| {
-            if (block == game.blockType.frt) {
-                numberOfFruit += 1;
-            }
+    var iter = levelManager.dynamic_map.iterator();
+    while (iter.next()) |entry| {
+        if (entry.value_ptr.* == game.blockType.frt) {
+            numberOfFruit += 1;
         }
     }
     return numberOfFruit;
@@ -97,7 +98,7 @@ fn undo() void {
     };
     playerList = undoHistory.pop();
 
-    levelManager.mat16x9 = mapHistory.pop();
+    levelManager.dynamic_map = dynamic_mapHistory.pop();
     fruitNumber = numFruit();
 }
 
@@ -112,10 +113,17 @@ fn redo() void {
         std.debug.print("Failed to append undo position: {}\n", .{err});
         return;
     };
-    mapHistory.append(levelManager.mat16x9) catch |err| {
+
+    const map_clone = levelManager.dynamic_map.clone() catch |err| {
+        std.debug.print("Failed to clone map redo: {}\n", .{err});
+        return;
+    };
+
+    dynamic_mapHistory.append(map_clone) catch |err| {
         std.debug.print("Failed to append map history: {}\n", .{err});
         return;
     };
+
     playerList = redoHistory.pop();
     fruitNumber = numFruit();
 }
@@ -123,8 +131,11 @@ fn movePlayer(dir: direction) void {
     redoHistory.clearAndFree();
     undoHistory.append(deepClonePlayerList(playerList) catch return) catch return;
     boxes.boxUndoHistory.append(deepClonePlayerList(boxes.boxList) catch return) catch return;
-
-    mapHistory.append(levelManager.mat16x9) catch |err| {
+    const map_clone = levelManager.dynamic_map.clone() catch |err| {
+        std.debug.print("Failed to clone map: {}\n", .{err});
+        return;
+    };
+    dynamic_mapHistory.append(map_clone) catch |err| {
         std.debug.print("Failed to append map history: {}\n", .{err});
         return;
     };
@@ -219,19 +230,9 @@ pub fn clearPlayer() void {
 }
 
 pub fn clearPlayerAndMap() void {
-    levelManager.mat16x9 = [9][16]blockType{
-        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-        [_]blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    };
     playerList.deinit();
     boxes.clearBoxes();
+    levelManager.dynamic_map.clearAndFree();
 }
 
 fn isOwnBodyAt(x: i32, y: i32) bool {
