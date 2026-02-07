@@ -64,7 +64,9 @@ fn cellBelongsToGroup(x: i32, y: i32) ?GroupRef {
 }
 
 pub fn canPush(startX: i32, startY: i32, dir: Direction) bool {
+    std.debug.print("can i puwsh? >.< OwO\n", .{});
     const block = game.getBlockWorldGrid((startX), (startY));
+    std.debug.print("{}\n", .{block});
     if (block == air or block == frt) return true;
     if (block == vic and player.fruitNumber == 0) return true;
     var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
@@ -92,9 +94,6 @@ pub fn canPush(startX: i32, startY: i32, dir: Direction) bool {
         for (groupCells(g)) |cell| {
             const nx = @as(i32, @intFromFloat(cell.x)) + d.x;
             const ny = @as(i32, @intFromFloat(cell.y)) + d.y;
-
-            if (nx < 0 or nx >= 16 or ny < 0 or ny >= 9)
-                return false;
 
             const blk = game.getBlockWorldGrid(nx, ny);
 
@@ -303,9 +302,6 @@ fn collectAffected(
         for (groupCells(g)) |cell| {
             const nx = @as(i32, @intFromFloat(cell.x)) + d.x;
             const ny = @as(i32, @intFromFloat(cell.y)) + d.y;
-
-            if (nx < 0 or nx >= 16 or ny < 0 or ny >= 9)
-                return null;
 
             const blk = game.getBlockWorldGrid(nx, ny);
 

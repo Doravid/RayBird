@@ -29,10 +29,9 @@ var sizeLoc: i32 = undefined;
 var renderWidthLoc: i32 = undefined;
 var renderHeightLoc: i32 = undefined;
 
-var cameraOffsetX: i32 = 0;
-var cameraOffsetY: i32 = 0;
-
 pub var boxSize: i32 = 1920 / 16;
+
+pub var camera: rl.Camera2D = undefined;
 pub fn runGame() !void {
     const move = rl.loadImage("resources/box.png");
     const plat = rl.loadImage("resources/dirt1.png");
@@ -104,6 +103,13 @@ pub fn runGame() !void {
 
     defer rl.closeWindow(); // Close window and OpenGL context
     var inMenus: bool = true;
+
+    camera = rl.Camera2D{
+        .offset = rl.Vector2{ .x = 0, .y = 0 },
+        .target = rl.Vector2{ .x = 0, .y = 0 },
+        .rotation = 0.0,
+        .zoom = 1.0,
+    };
     //--------------------------------------------------------------------------------------
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or DEL key
@@ -125,8 +131,12 @@ pub fn runGame() !void {
             drawWater();
             inMenus = levelManager.loadMenu();
         } else {
+            updateCamera(&camera);
+
+            rl.beginMode2D(camera);
             drawMap(plat_t, plat2_t, victory_t, fruit_t, spike_t, grass_t);
-            handleMouse();
+            rl.endMode2D();
+
             if (levelManager.currentMenu == levelManager.menuType.levelEditor) {
                 const block: rl.Texture = switch (levelEditor.currentBlock) {
                     sol => plat_t,
@@ -152,13 +162,14 @@ pub fn runGame() !void {
                     rl.drawText(text, @divTrunc(boxSize, 12), @divTrunc(boxSize, 6), @divTrunc(boxSize, 5), Color.black);
                     rl.drawText("Press 0-9 to select player group", @divTrunc(boxSize, 12), @divTrunc(boxSize, 7) * 3, @divTrunc(boxSize, 5), Color.black);
                 }
-
-                drawWater();
             }
+            rl.beginMode2D(camera);
             player.drawPlayer(&body_textures);
             boxes.drawBoxes(move_t);
-            inMenus = levelManager.checkPause();
+            rl.endMode2D();
+
             drawWater();
+            inMenus = levelManager.checkPause();
         }
         rl.drawFPS(2, 2);
     }
@@ -276,7 +287,7 @@ fn drawDirt(grass_t: rl.Texture, plat_t: rl.Texture, plat2_t: rl.Texture, posX: 
 pub fn drawTexture(texture: rl.Texture, posX: i32, posY: i32, tint: rl.Color) void {
     const source = rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(texture.width), .height = @floatFromInt(texture.height) };
 
-    const dest = rl.Rectangle{ .x = @floatFromInt(posX), .y = @floatFromInt(posY + cameraOffsetY), .width = @floatFromInt(boxSize), .height = @floatFromInt(boxSize) };
+    const dest = rl.Rectangle{ .x = @floatFromInt(posX), .y = @floatFromInt(posY), .width = @floatFromInt(boxSize), .height = @floatFromInt(boxSize) };
     const origin = rl.Vector2{ .x = 0, .y = 0 };
     const rotation = 0.0;
     rl.drawTexturePro(texture, source, dest, origin, rotation, tint);
@@ -334,7 +345,7 @@ fn drawWater() void {
     if (builtin.target.os.tag != .emscripten) {
         rl.beginShaderMode(finePixelShader);
     }
-    rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = @floatFromInt(cameraOffsetY) }, rl.Color.init(255, 255, 255, 255));
+    rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.init(255, 255, 255, 255));
     rl.endShaderMode();
 }
 fn fullScreen() void {
@@ -365,10 +376,6 @@ pub fn getBlockAtPixelCoord(x: f32, y: f32) blockType {
     return levelManager.dynamic_map.get(.{ @intFromFloat(new_x), @intFromFloat(new_y) }) orelse return air;
 }
 pub fn getBlockWorldGrid(x: i32, y: i32) blockType {
-    if (x >= 16 or y >= 9 or x < 0 or y < 0) {
-        std.debug.print("{}, {} is out of bounds (getBlockWorldGrid) \n", .{ (x), (y) });
-        return blockType.null;
-    }
     return levelManager.dynamic_map.get(.{ x, y }) orelse return air;
 }
 pub fn setBlockAtPixelCoord(x: f32, y: f32, block: blockType) void {
@@ -387,17 +394,54 @@ pub fn setBlockWorldGrid(x: f32, y: f32, block: blockType) void {
 pub fn setWindowSizeFromVector(ScreenSize: rl.Vector2) void {
     rl.setWindowSize(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
     boxSize = @divExact(rl.getScreenWidth(), 16);
-    gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 32));
+    gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 40));
     backgroundTexture = rl.loadRenderTexture(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
     waterTexture = rl.loadRenderTexture(@intFromFloat(ScreenSize.x), @intFromFloat(ScreenSize.y));
 }
-fn handleMouse() void {
-    const x = rl.getMouseWheelMove();
-    if (x > 0) {
-        cameraOffsetY += 30;
-        std.debug.print("{}\n", .{cameraOffsetY});
-    } else if (x < 0 and cameraOffsetY > 0) {
-        cameraOffsetY -= 30;
-        std.debug.print("{}\n", .{cameraOffsetY});
+fn updateCamera(cam: *rl.Camera2D) void {
+    const screenWidth = @as(f32, @floatFromInt(rl.getScreenWidth()));
+    const screenHeight = @as(f32, @floatFromInt(rl.getScreenHeight()));
+
+    const mapWidth = @as(f32, @floatFromInt(boxSize * 16));
+    const mapHeight = @as(f32, @floatFromInt(boxSize * 9));
+
+    // const wheel = rl.getMouseWheelMove();
+    // if (wheel != 0) {
+    //     const mouseWorldPos = rl.getScreenToWorld2D(rl.getMousePosition(), cam.*);
+    //     cam.offset = rl.getMousePosition();
+    //     cam.target = mouseWorldPos;
+
+    //     const scaleFactor = 1.0 + (0.25 * @abs(wheel));
+    //     if (wheel < 0) cam.zoom = cam.zoom / scaleFactor;
+    //     if (wheel > 0) cam.zoom = cam.zoom * scaleFactor;
+    // }
+
+    cam.zoom = std.math.clamp(cam.zoom, 0.5, 2.0);
+
+    if (rl.isMouseButtonDown(rl.MouseButton.middle) or rl.isMouseButtonDown(rl.MouseButton.left)) {
+        const delta = rl.getMouseDelta();
+        const scale = 1.0 / cam.zoom;
+        cam.target.x -= delta.x * scale;
+        cam.target.y -= delta.y * scale;
     }
+
+    var viewPos = rl.Vector2{
+        .x = cam.target.x - (cam.offset.x / cam.zoom),
+        .y = cam.target.y - (cam.offset.y / cam.zoom),
+    };
+
+    const visibleWidth = screenWidth / cam.zoom;
+    const visibleHeight = screenHeight / cam.zoom;
+
+    const maxViewY = mapHeight - visibleHeight;
+    const minViewY = -visibleHeight * 2.0;
+
+    const minViewX = -visibleWidth / 2.0;
+    const maxViewX = mapWidth - (visibleWidth / 2.0);
+
+    viewPos.y = std.math.clamp(viewPos.y, minViewY, maxViewY);
+    viewPos.x = std.math.clamp(viewPos.x, minViewX, maxViewX);
+
+    cam.target.x = viewPos.x + (cam.offset.x / cam.zoom);
+    cam.target.y = viewPos.y + (cam.offset.y / cam.zoom);
 }

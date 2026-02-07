@@ -21,7 +21,6 @@ pub var fruitNumber: i32 = 0;
 //Player history!
 pub var undoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).init(std.heap.c_allocator);
 pub var redoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).init(std.heap.c_allocator);
-var mapHistory = std.ArrayList([9][16]blockType).init(std.heap.c_allocator);
 
 var dynamic_mapHistory = std.ArrayList(std.AutoHashMap(std.meta.Tuple(&.{ i32, i32 }), game.blockType)).init(std.heap.c_allocator);
 
@@ -61,26 +60,27 @@ pub fn updatePos() void {
     var playX: i32 = @intFromFloat(playerList.items[currentPlayerIndex].items[0].x);
     var playY: i32 = @intFromFloat(playerList.items[currentPlayerIndex].items[0].y);
     if ((rl.isKeyPressed(rl.KeyboardKey.w) or rl.isKeyPressed(rl.KeyboardKey.up))) {
+        std.debug.print(":3\n", .{});
         playY -= 1;
-        if (playY >= 0 and !isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.up)) {
+        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.up)) {
             movePlayer(direction.up);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.s) or rl.isKeyPressed(rl.KeyboardKey.down))) {
         playY += 1;
-        if (playY >= 0 and !isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.down)) {
+        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.down)) {
             movePlayer(direction.down);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.a) or rl.isKeyPressed(rl.KeyboardKey.left))) {
         playX -= 1;
-        if (playY >= 0 and !isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.left)) {
+        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.left)) {
             movePlayer(direction.left);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.d) or rl.isKeyPressed(rl.KeyboardKey.right))) {
         playX += 1;
-        if (playY >= 0 and !isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.right)) {
+        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.right)) {
             movePlayer(direction.right);
         }
     }
@@ -223,7 +223,6 @@ pub fn clearPlayer() void {
     boxes.clearBoxes();
     undoHistory.clearAndFree();
     redoHistory.clearAndFree();
-    mapHistory.clearAndFree();
     fallingPlayers.clearAndFree();
     movementLocked = false;
     canFall = false;
@@ -236,6 +235,7 @@ pub fn clearPlayerAndMap() void {
 }
 
 fn isOwnBodyAt(x: i32, y: i32) bool {
+    std.debug.print("UwU", .{});
     if (currentPlayerIndex >= playerList.items.len) return false;
 
     for (playerList.items[currentPlayerIndex].items) |segment| {

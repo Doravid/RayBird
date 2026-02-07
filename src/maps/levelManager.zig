@@ -9,26 +9,17 @@ const levelEditor = @import("levelEditor.zig");
 const builtin = @import("builtin");
 
 const air = game.blockType.air;
-pub var mat16x9 = [9][16]game.blockType{
-    [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-    [_]game.blockType{ air, air, air, air, air, air, air, air, air, air, air, air, air, air, air, air },
-};
 pub var dynamic_map = std.AutoHashMap(std.meta.Tuple(&.{ i32, i32 }), game.blockType).init(std.heap.c_allocator);
+pub const BlockDef = struct {
+    x: i32,
+    y: i32,
+    t: game.blockType,
+};
 pub const level = struct {
-    map: [9][16]game.blockType,
+    map: []BlockDef,
     player: [][]rl.Vector2,
     boxes: [][]rl.Vector2,
     const Self = @This();
-    pub fn init(map: [9][16]game.blockType, playerA: []rl.Vector2) Self {
-        return .{ .map = map, .player = playerA };
-    }
 };
 
 pub var currentLevelNum = 0;
@@ -71,7 +62,7 @@ pub fn loadLevelFromJson(name: u32) level {
             std.log.info("Loading embedded level {}", .{name});
         } else {
             std.debug.print("Error: Level {} not found in embedded data (WASM target)\n", .{name});
-            return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+            return level{ .map = &[_]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
         }
     } else {
         const prefix = "resources/maps/level";
@@ -79,13 +70,13 @@ pub fn loadLevelFromJson(name: u32) level {
 
         const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
             std.debug.print("Failed to merge string and int for path: {}\n", .{err});
-            return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+            return level{ .map = &[0]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
         };
         defer alloc.free(newPrefix);
 
         const path = alloc.alloc(u8, newPrefix.len + suffix.len) catch |err| {
             std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
-            return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+            return level{ .map = &[0]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
         };
         defer alloc.free(path);
 
@@ -94,7 +85,7 @@ pub fn loadLevelFromJson(name: u32) level {
 
         jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
             std.debug.print("Failed to read the file: {}. Ensure it exists and is accessible.\n", .{err});
-            return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+            return level{ .map = &[0]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
         };
         should_free_json = true;
     }
@@ -104,7 +95,7 @@ pub fn loadLevelFromJson(name: u32) level {
         .ignore_unknown_fields = true,
     }) catch |err| {
         std.debug.print("Failed to parse json for level {}: {}\n", .{ name, err });
-        return level{ .map = mat16x9, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+        return level{ .map = &[_]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
     };
 
     return result.value;
@@ -147,16 +138,11 @@ pub fn setLevel(levelNumber: u32) void {
             return;
         };
     }
-    for (levelA.map, 0..) |layer, i| {
-        for (layer, 0..) |cell, j| {
-            if (cell != air) {
-                dynamic_map.put(.{ @intCast(j), @intCast(i) }, cell) catch |err| {
-                    std.debug.print("{}", .{err});
-                };
-            }
-        }
+    for (levelA.map) |block_def| {
+        dynamic_map.put(.{ block_def.x, block_def.y }, block_def.t) catch |err| {
+            std.debug.print("{}", .{err});
+        };
     }
-    mat16x9 = levelA.map;
 
     for (player.playerList.items) |playerBody| {
         for (playerBody.items) |segment| {
