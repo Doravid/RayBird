@@ -35,10 +35,6 @@ pub fn loadLevelEditor() void {
         handleGroupSelection();
         handleTabKey();
     }
-
-    if (player.playerList.items.len > 0) {
-        player.drawPlayer(&game.body_textures);
-    }
 }
 
 fn handleSaveInput() void {
@@ -79,7 +75,6 @@ fn placePlayerBody(pos: rl.Vector2) void {
 
     var currentPlayer = &player.playerList.items[player.currentPlayerIndex];
 
-    // Logic extracted to cleaner helper function
     if (shouldPlaceBodySegment(currentPlayer, x, y)) {
         currentPlayer.insert(0, rl.Vector2{ .x = @floatFromInt(x), .y = @floatFromInt(y) }) catch |err| {
             std.debug.print("Failed to insert/app body: {}\n", .{err});

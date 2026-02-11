@@ -354,22 +354,6 @@ fn fullScreen() void {
         return;
     }
 }
-pub fn directionToVec2(dir: player.direction) rl.Vector2 {
-    switch (dir) {
-        player.direction.up => {
-            return rl.Vector2{ .x = 0, .y = -1 };
-        },
-        player.direction.down => {
-            return rl.Vector2{ .x = 0, .y = 1 };
-        },
-        player.direction.left => {
-            return rl.Vector2{ .x = -1, .y = 0 };
-        },
-        player.direction.right => {
-            return rl.Vector2{ .x = 1, .y = 0 };
-        },
-    }
-}
 pub fn getBlockAtPixelCoord(x: f32, y: f32) blockType {
     const new_x = x / @as(f32, @floatFromInt(boxSize));
     const new_y = y / @as(f32, @floatFromInt(boxSize));
