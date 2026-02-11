@@ -345,7 +345,7 @@ fn drawWater() void {
     if (builtin.target.os.tag != .emscripten) {
         rl.beginShaderMode(finePixelShader);
     }
-    rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.init(255, 255, 255, 255));
+    rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = -camera.target.y }, rl.Color.init(255, 255, 255, 255));
     rl.endShaderMode();
 }
 fn fullScreen() void {
