@@ -28,6 +28,8 @@ var finePixelShader: rl.Shader = undefined;
 var sizeLoc: i32 = undefined;
 var renderWidthLoc: i32 = undefined;
 var renderHeightLoc: i32 = undefined;
+var pixelWidthLoc: i32 = undefined;
+var pixelHeightLoc: i32 = undefined;
 
 pub var boxSize: i32 = 1920 / 16;
 
@@ -56,13 +58,19 @@ pub fn runGame() !void {
     rl.genTextureMipmaps(&montserrat.texture);
     rl.setTextureFilter(montserrat.texture, rl.TextureFilter.trilinear);
     gui.guiSetFont(montserrat);
-
-    pixelShader = rl.loadShader(null, "resources/shaders/pixel.fs");
+    if (builtin.target.os.tag != .emscripten) {
+        pixelShader = rl.loadShader(null, "resources/shaders/pixel.fs");
+    } else {
+        pixelShader = rl.loadShader(null, "resources/shaders/pixel_web.fs");
+    }
     finePixelShader = rl.loadShader(null, "resources/shaders/pixel_fine.fs");
 
     sizeLoc = rl.getShaderLocation(pixelShader, "size");
     renderWidthLoc = rl.getShaderLocation(pixelShader, "renderWidth");
     renderHeightLoc = rl.getShaderLocation(pixelShader, "renderHeight");
+
+    rl.setShaderValue(pixelShader, renderWidthLoc, &@as(f32, 1920), .float);
+    rl.setShaderValue(pixelShader, renderHeightLoc, &@as(f32, 1080), .float);
 
     backgroundTexture = rl.loadRenderTexture(1920, 1080);
     waterTexture = rl.loadRenderTexture(1920, 1080);
@@ -210,9 +218,7 @@ fn drawSky(cloud_t: rl.Texture2D) void {
     rl.setShaderValue(pixelShader, renderHeightLoc, &@as(f32, @floatFromInt(rl.getScreenHeight())), rl.ShaderUniformDataType.float);
 
     //RENDER THE TEXTURE WITH THE SHADER
-    if (builtin.target.os.tag != .emscripten) {
-        rl.beginShaderMode(pixelShader);
-    }
+    rl.beginShaderMode(pixelShader);
     rl.drawTextureRec(backgroundTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(backgroundTexture.texture.width), .height = -@as(f32, @floatFromInt(backgroundTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = 0 }, rl.Color.white);
     rl.endShaderMode();
 }
@@ -345,6 +351,7 @@ fn drawWater() void {
     if (builtin.target.os.tag != .emscripten) {
         rl.beginShaderMode(finePixelShader);
     }
+
     rl.drawTextureRec(waterTexture.texture, rl.Rectangle{ .x = 0, .y = 0, .width = @floatFromInt(waterTexture.texture.width), .height = -@as(f32, @floatFromInt(waterTexture.texture.height)) }, rl.Vector2{ .x = 0, .y = -camera.target.y }, rl.Color.init(255, 255, 255, 255));
     rl.endShaderMode();
 }

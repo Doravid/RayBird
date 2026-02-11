@@ -110,7 +110,6 @@ fn placeBox(pos: rl.Vector2) void {
     game.setBlockAtPixelCoord(pos.x, pos.y, currentBlock);
 }
 
-// Generic helper to resize lists if index is out of bounds
 fn ensureListSize(list: anytype, index: usize) void {
     while (list.items.len <= index) {
         const newItem = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
@@ -122,7 +121,6 @@ fn ensureListSize(list: anytype, index: usize) void {
 }
 
 fn drawSaveDialog() void {
-    // Simplified rectangle calculation
     const screenWidth = @as(f32, @floatFromInt(rl.getScreenWidth()));
     const textBoxRect = rl.Rectangle{ .height = 1.25 * screenWidth / 16.0, .width = 4.0 * screenWidth / 16.0, .x = (screenWidth / 2.0) - 240.0, .y = 80 };
 
