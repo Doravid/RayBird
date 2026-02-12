@@ -370,14 +370,21 @@ pub fn getBlockWorldGrid(x: i32, y: i32) blockType {
     return levelManager.dynamic_map.get(.{ x, y }) orelse return air;
 }
 pub fn setBlockAtPixelCoord(x: f32, y: f32, block: blockType) void {
-    const new_x = x / @as(f32, @floatFromInt(boxSize));
-    const new_y = y / @as(f32, @floatFromInt(boxSize));
+    var new_x = x / @as(f32, @floatFromInt(boxSize));
+    var new_y = y / @as(f32, @floatFromInt(boxSize));
+
+    if (x < 0) new_x -= 1;
+    if (y < 0) new_y -= 1;
+
     levelManager.dynamic_map.put(.{ @intFromFloat(new_x), @intFromFloat(new_y) }, block) catch |err| {
         std.debug.print("setBlockAtPixelCoord {}", .{err});
     };
 }
 pub fn setBlockWorldGrid(x: f32, y: f32, block: blockType) void {
-    levelManager.dynamic_map.put(.{ @intFromFloat(x), @intFromFloat(y) }, block) catch |err| {
+    const new_x = if (x < 0) x - 1 else x;
+    const new_y = if (y < 0) y - 1 else x;
+
+    levelManager.dynamic_map.put(.{ @intFromFloat(new_x), @intFromFloat(new_y) }, block) catch |err| {
         std.debug.print("setBlockAtPixelCoord {}", .{err});
     };
 }
