@@ -24,71 +24,34 @@ pub const level = struct {
 
 pub var currentLevelNum = 0;
 
-// Embedded level files for WASM
-// const embedded_levels = if (builtin.target.os.tag == .emscripten or true) struct {
-//     const level1 = @embedFile("../../resources/maps/level1.json");
-//     const level2 = @embedFile("../../resources/maps/level2.json");
-//     const level3 = @embedFile("../../resources/maps/level3.json");
-//     const level4 = @embedFile("../../resources/maps/level4.json");
-//     const level5 = @embedFile("../../resources/maps/level5.json");
-
-//     pub fn getLevelData(level_num: u32) ?[]const u8 {
-//         return switch (level_num) {
-//             1 => level1,
-//             2 => level2,
-//             3 => level3,
-//             4 => level4,
-//             5 => level5,
-//             else => null,
-//         };
-//     }
-// } else struct {
-//     pub fn getLevelData(level_num: u32) ?[]const u8 {
-//         _ = level_num;
-//         return null;
-//     }
-// };
-
 pub fn loadLevelFromJson(name: u32) level {
     const alloc = std.heap.c_allocator;
     var jsonData: []const u8 = undefined;
     var should_free_json = false;
 
-    const is_wasm = false; //builtin.target.os.tag == .emscripten;
+    const prefix = "resources/maps/level";
+    const suffix = ".json";
 
-    if (is_wasm) {
-        // if (embedded_levels.getLevelData(name)) |data| {
-        //     jsonData = data;
-        //     std.log.info("Loading embedded level {}", .{name});
-        // } else {
-        //     std.debug.print("Error: Level {} not found in embedded data (WASM target)\n", .{name});
-        //     return level{ .map = &[_]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
-        // }
-    } else {
-        const prefix = "resources/maps/level";
-        const suffix = ".json";
+    const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
+        std.debug.print("Failed to merge string and int for path: {}\n", .{err});
+        return level{ .map = &[0]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+    };
+    defer alloc.free(newPrefix);
 
-        const newPrefix = std.fmt.allocPrint(alloc, "{s}{d}", .{ prefix, name }) catch |err| {
-            std.debug.print("Failed to merge string and int for path: {}\n", .{err});
-            return level{ .map = &[0]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
-        };
-        defer alloc.free(newPrefix);
+    const path = alloc.alloc(u8, newPrefix.len + suffix.len) catch |err| {
+        std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
+        return level{ .map = &[0]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+    };
+    defer alloc.free(path);
 
-        const path = alloc.alloc(u8, newPrefix.len + suffix.len) catch |err| {
-            std.debug.print("Failed to allocate memory for the path: {}\n", .{err});
-            return level{ .map = &[0]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
-        };
-        defer alloc.free(path);
+    std.mem.copyForwards(u8, path[0..], newPrefix);
+    std.mem.copyForwards(u8, path[newPrefix.len..], suffix);
 
-        std.mem.copyForwards(u8, path[0..], newPrefix);
-        std.mem.copyForwards(u8, path[newPrefix.len..], suffix);
-
-        jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
-            std.debug.print("Failed to read the file: {}. Ensure it exists and is accessible.\n", .{err});
-            return level{ .map = &[0]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
-        };
-        should_free_json = true;
-    }
+    jsonData = std.fs.cwd().readFileAlloc(alloc, path, 2048) catch |err| {
+        std.debug.print("Failed to read the file: {}. Ensure it exists and is accessible.\n", .{err});
+        return level{ .map = &[0]BlockDef{}, .player = &[_][]rl.Vector2{}, .boxes = &[_][]rl.Vector2{} };
+    };
+    should_free_json = true;
 
     defer if (should_free_json) alloc.free(jsonData);
     const result = std.json.parseFromSlice(level, alloc, jsonData, .{

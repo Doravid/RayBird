@@ -60,27 +60,26 @@ pub fn updatePos() void {
     var playX: i32 = @intFromFloat(playerList.items[currentPlayerIndex].items[0].x);
     var playY: i32 = @intFromFloat(playerList.items[currentPlayerIndex].items[0].y);
     if ((rl.isKeyPressed(rl.KeyboardKey.w) or rl.isKeyPressed(rl.KeyboardKey.up))) {
-        std.debug.print(":3\n", .{});
         playY -= 1;
-        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.up)) {
+        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.up) and movement.isStationary()) {
             movePlayer(direction.up);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.s) or rl.isKeyPressed(rl.KeyboardKey.down))) {
         playY += 1;
-        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.down)) {
+        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.down) and movement.isStationary()) {
             movePlayer(direction.down);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.a) or rl.isKeyPressed(rl.KeyboardKey.left))) {
         playX -= 1;
-        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.left)) {
+        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.left) and movement.isStationary()) {
             movePlayer(direction.left);
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.d) or rl.isKeyPressed(rl.KeyboardKey.right))) {
         playX += 1;
-        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.right)) {
+        if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.right) and movement.isStationary()) {
             movePlayer(direction.right);
         }
     }

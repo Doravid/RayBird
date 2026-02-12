@@ -206,6 +206,16 @@ pub fn applyPush(startX: i32, startY: i32, dir: Direction) void {
 var fallingBoxes = std.ArrayList(bool).init(std.heap.c_allocator);
 var fallingPlayers = std.ArrayList(bool).init(std.heap.c_allocator);
 
+pub fn isStationary() bool {
+    for (fallingBoxes.items) |isFalling| {
+        if (isFalling) return false;
+    }
+
+    for (fallingPlayers.items) |isFalling| {
+        if (isFalling) return false;
+    }
+    return true;
+}
 pub fn updateGravity() void {
     const dt = rl.getFrameTime();
     const speed: f32 = 10.0;
@@ -238,7 +248,6 @@ fn handleGravity(
     defer arena.deinit();
 
     const groups = collectAffected(g, .down, arena.allocator());
-
     // Cannot fall
     if (groups == null or
         !validateMove(groups.?.items, .down, arena.allocator()))
