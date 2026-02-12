@@ -55,10 +55,11 @@ fn handleMouseInput() void {
     if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
         const mousePos = rl.getMousePosition();
         var worldPos = rl.getScreenToWorld2D(mousePos, game.camera);
-        const replacedBlock = game.getBlockAtPixelCoord(worldPos.x, worldPos.y);
 
         if (worldPos.x < 0) worldPos.x -= @floatFromInt(game.boxSize);
         if (worldPos.y < 0) worldPos.y -= @floatFromInt(game.boxSize);
+
+        const replacedBlock = game.getBlockAtPixelCoord(worldPos.x, worldPos.y);
 
         if (currentBlock != bdy and currentBlock != box) {
             game.setBlockAtPixelCoord(worldPos.x, worldPos.y, currentBlock);
@@ -95,6 +96,8 @@ fn shouldPlaceBodySegment(currentPlayer: *std.ArrayList(rl.Vector2), x: i32, y: 
 
     const dx = @abs(x - lastX);
     const dy = @abs(y - lastY);
+
+    std.debug.print("(Click) x: {}, y: {}\n(last) x: {}, y: {}\n(delta) x: {}, y: {}", .{ x, y, lastX, lastY, dx, dy });
 
     return (dx == 1 and dy == 0) or (dy == 1 and dx == 0);
 }
