@@ -64,9 +64,7 @@ fn cellBelongsToGroup(x: i32, y: i32) ?GroupRef {
 }
 
 pub fn canPush(startX: i32, startY: i32, dir: Direction) bool {
-    std.debug.print("can i puwsh? >.< OwO\n", .{});
     const block = game.getBlockWorldGrid((startX), (startY));
-    std.debug.print("{}\n", .{block});
     if (block == air or block == frt) return true;
     if (block == vic and player.fruitNumber == 0) return true;
     var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);

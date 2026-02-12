@@ -69,11 +69,8 @@ var maxLevelUnlocked: usize = 0;
 var currentLevelNumber: usize = 0;
 
 pub fn setLevel(levelNumber: u32) void {
-    std.debug.print(":pensive:\n", .{});
-    player.clearPlayer();
-    std.debug.print(":clearedPlayer:\n", .{});
+    player.clearPlayerAndMap();
     const levelA = loadLevelFromJson(levelNumber);
-    std.debug.print(":levelLoaded!!:\n", .{});
     currentLevelNumber = levelNumber;
 
     if (levelNumber > maxLevelUnlocked) {
@@ -109,7 +106,6 @@ pub fn setLevel(levelNumber: u32) void {
 
     for (player.playerList.items) |playerBody| {
         for (playerBody.items) |segment| {
-            std.debug.print("segment: {}", .{segment});
             game.setBlockWorldGrid(segment.x, segment.y, game.blockType.bdy);
         }
     }
@@ -127,6 +123,9 @@ pub fn checkPause() bool {
     }
     if (rl.isKeyPressed(rl.KeyboardKey.escape)) {
         currentMenu = menuType.main;
+        player.clearPlayerAndMap();
+        player.playerList.clearAndFree();
+
         return true;
     }
 

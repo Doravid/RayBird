@@ -128,8 +128,25 @@ fn redo() void {
 }
 fn movePlayer(dir: direction) void {
     redoHistory.clearAndFree();
-    undoHistory.append(deepClonePlayerList(playerList) catch return) catch return;
-    boxes.boxUndoHistory.append(deepClonePlayerList(boxes.boxList) catch return) catch return;
+    const historyClone = deepClonePlayerList(playerList) catch |err| {
+        std.debug.print("{}\n", .{err});
+        return;
+    };
+    undoHistory.append(historyClone) catch |err| {
+        std.debug.print("{}\n", .{err});
+        return;
+    };
+    const boxClone = deepClonePlayerList(boxes.boxList) catch |err| {
+        std.debug.print("{}\n", .{err});
+        return;
+    };
+    boxes.boxUndoHistory.append(boxClone) catch |err| {
+        std.debug.print("{}\n", .{err});
+        return;
+    };
+
+    std.debug.print("\n5\n", .{});
+
     const map_clone = levelManager.dynamic_map.clone() catch |err| {
         std.debug.print("Failed to clone map: {}\n", .{err});
         return;
@@ -216,25 +233,19 @@ pub fn drawPlayer(textures: []const rl.Texture) void {
         }
     }
 }
-pub fn clearPlayer() void {
+
+pub fn clearPlayerAndMap() void {
     playerList.clearAndFree();
-    clearPlayerAndMap();
     boxes.clearBoxes();
     undoHistory.clearAndFree();
     redoHistory.clearAndFree();
     fallingPlayers.clearAndFree();
     movementLocked = false;
     canFall = false;
-}
-
-pub fn clearPlayerAndMap() void {
-    playerList.deinit();
-    boxes.clearBoxes();
     levelManager.dynamic_map.clearAndFree();
 }
 
 fn isOwnBodyAt(x: i32, y: i32) bool {
-    std.debug.print("UwU", .{});
     if (currentPlayerIndex >= playerList.items.len) return false;
 
     for (playerList.items[currentPlayerIndex].items) |segment| {
@@ -250,12 +261,11 @@ fn deepClonePlayerList(
     src: std.ArrayList(std.ArrayList(rl.Vector2)),
 ) !std.ArrayList(std.ArrayList(rl.Vector2)) {
     var out = std.ArrayList(std.ArrayList(rl.Vector2)).init(std.heap.c_allocator);
-
     for (src.items) |playerBody| {
         var bodyClone = std.ArrayList(rl.Vector2).init(std.heap.c_allocator);
         try bodyClone.appendSlice(playerBody.items);
         try out.append(bodyClone);
     }
-
+    std.debug.print("\ndeepClonePlayerList makes it\n", .{});
     return out;
 }

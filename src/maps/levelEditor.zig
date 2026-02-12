@@ -54,8 +54,11 @@ fn handleTabKey() void {
 fn handleMouseInput() void {
     if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
         const mousePos = rl.getMousePosition();
-        const worldPos = rl.getScreenToWorld2D(mousePos, game.camera);
+        var worldPos = rl.getScreenToWorld2D(mousePos, game.camera);
         const replacedBlock = game.getBlockAtPixelCoord(worldPos.x, worldPos.y);
+
+        if (worldPos.x < 0) worldPos.x -= @floatFromInt(game.boxSize);
+        if (worldPos.y < 0) worldPos.y -= @floatFromInt(game.boxSize);
 
         if (currentBlock != bdy and currentBlock != box) {
             game.setBlockAtPixelCoord(worldPos.x, worldPos.y, currentBlock);
