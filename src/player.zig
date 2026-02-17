@@ -145,8 +145,6 @@ fn movePlayer(dir: direction) void {
         return;
     };
 
-    std.debug.print("\n5\n", .{});
-
     const map_clone = levelManager.dynamic_map.clone() catch |err| {
         std.debug.print("Failed to clone map: {}\n", .{err});
         return;
@@ -167,7 +165,6 @@ fn movePlayer(dir: direction) void {
         direction.up => rl.Vector2.add(playerList.items[currentPlayerIndex].items[0], rl.Vector2{ .x = 0, .y = -1 }),
         direction.down => rl.Vector2.add(playerList.items[currentPlayerIndex].items[0], rl.Vector2{ .x = 0, .y = 1 }),
     };
-    std.log.info("body x / y {} {}", .{ @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].x)), @as(i32, @intFromFloat(playerList.items[currentPlayerIndex].items[0].y)) });
 
     const newHead = game.getBlockWorldGrid(@intFromFloat(newHeadPos.x), @intFromFloat(newHeadPos.y));
 
@@ -209,7 +206,6 @@ fn movePlayer(dir: direction) void {
         undo();
     }
 }
-
 pub fn drawPlayer(textures: []const rl.Texture) void {
     for (playerList.items, 0..) |playerBody, bodyNum| {
         for (playerBody.items, 0..) |elem, i| {
@@ -266,6 +262,5 @@ fn deepClonePlayerList(
         try bodyClone.appendSlice(playerBody.items);
         try out.append(bodyClone);
     }
-    std.debug.print("\ndeepClonePlayerList makes it\n", .{});
     return out;
 }

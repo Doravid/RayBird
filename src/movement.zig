@@ -90,8 +90,8 @@ pub fn canPush(startX: i32, startY: i32, dir: Direction) bool {
         affected.append(g) catch return false;
 
         for (groupCells(g)) |cell| {
-            const nx = @as(i32, @intFromFloat(cell.x)) + d.x;
-            const ny = @as(i32, @intFromFloat(cell.y)) + d.y;
+            const nx = @as(i32, @intFromFloat(@floor(cell.x))) + d.x;
+            const ny = @as(i32, @intFromFloat(@floor(cell.y))) + d.y;
 
             const blk = game.getBlockWorldGrid(nx, ny);
 
@@ -113,16 +113,16 @@ pub fn canPush(startX: i32, startY: i32, dir: Direction) bool {
     for (affected.items) |g| {
         for (groupCells(g)) |c| {
             moving.put(.{
-                .x = @as(i32, @intFromFloat(c.x)),
-                .y = @as(i32, @intFromFloat(c.y)),
+                .x = @as(i32, @intFromFloat(@floor(c.x))),
+                .y = @as(i32, @intFromFloat(@floor(c.y))),
             }, {}) catch return false;
         }
     }
 
     for (affected.items) |g| {
         for (groupCells(g)) |c| {
-            const nx = @as(i32, @intFromFloat(c.x)) + d.x;
-            const ny = @as(i32, @intFromFloat(c.y)) + d.y;
+            const nx = @as(i32, @intFromFloat(@floor(c.x))) + d.x;
+            const ny = @as(i32, @intFromFloat(@floor(c.y))) + d.y;
 
             if (moving.contains(.{ .x = nx, .y = ny }))
                 continue;
@@ -166,8 +166,8 @@ pub fn applyPush(startX: i32, startY: i32, dir: Direction) void {
         affected.append(g) catch return;
 
         for (groupCells(g)) |cell| {
-            const nx = @as(i32, @intFromFloat(cell.x)) + d.x;
-            const ny = @as(i32, @intFromFloat(cell.y)) + d.y;
+            const nx = @as(i32, @intFromFloat(@floor(cell.x))) + d.x;
+            const ny = @as(i32, @intFromFloat(@floor(cell.y))) + d.y;
 
             const blk = game.getBlockWorldGrid(nx, ny);
             if (blk == box_blk or blk == bdy) {
@@ -275,7 +275,8 @@ fn snapGroupToGrid(g: GroupRef) void {
     const blk = groupBlock(g);
 
     for (groupCells(g)) |*c| {
-        c.*.y = @floatFromInt(@as(i32, @intFromFloat(c.y)));
+        c.*.y = @floor(c.y);
+        c.*.x = @floor(c.x + 0.5);
         game.setBlockWorldGrid(c.x, c.y, blk);
     }
 }
@@ -307,8 +308,8 @@ fn collectAffected(
         affected.append(g) catch return null;
 
         for (groupCells(g)) |cell| {
-            const nx = @as(i32, @intFromFloat(cell.x)) + d.x;
-            const ny = @as(i32, @intFromFloat(cell.y)) + d.y;
+            const nx = @as(i32, @intFromFloat(@floor(cell.x))) + d.x;
+            const ny = @as(i32, @intFromFloat(@floor(cell.y))) + d.y;
 
             const blk = game.getBlockWorldGrid(nx, ny);
 
@@ -335,15 +336,15 @@ fn validateMove(groups: []GroupRef, dir: Direction, allocator: std.mem.Allocator
     for (groups) |g| {
         for (groupCells(g)) |c| {
             occupied.put(.{
-                .x = @as(i32, @intFromFloat(c.x)),
-                .y = @as(i32, @intFromFloat(c.y)),
+                .x = @as(i32, @intFromFloat(@floor(c.x))),
+                .y = @as(i32, @intFromFloat(@floor(c.y))),
             }, {}) catch return false;
         }
     }
     for (groups) |g| {
         for (groupCells(g)) |c| {
-            const nx = @as(i32, @intFromFloat(c.x)) + d.x;
-            const ny = @as(i32, @intFromFloat(c.y)) + d.y;
+            const nx = @as(i32, @intFromFloat(@floor(c.x))) + d.x;
+            const ny = @as(i32, @intFromFloat(@floor(c.y))) + d.y;
 
             if (occupied.contains(.{ .x = nx, .y = ny }))
                 continue;
@@ -366,7 +367,7 @@ fn handlePlayerStop(
         if (cell.y >= 8) {
             levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
         }
-        const curBlock = game.getBlockWorldGrid(@intFromFloat(cell.x), @intFromFloat(cell.y + 1));
+        const curBlock = game.getBlockWorldGrid(@intFromFloat(@floor(cell.x)), @intFromFloat(@floor(cell.y) + 1));
         if (curBlock == spk) {
             spkVist = true;
         }

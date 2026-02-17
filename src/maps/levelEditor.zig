@@ -54,10 +54,7 @@ fn handleTabKey() void {
 fn handleMouseInput() void {
     if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
         const mousePos = rl.getMousePosition();
-        var worldPos = rl.getScreenToWorld2D(mousePos, game.camera);
-
-        if (worldPos.x < 0) worldPos.x -= @floatFromInt(game.boxSize);
-        if (worldPos.y < 0) worldPos.y -= @floatFromInt(game.boxSize);
+        const worldPos = rl.getScreenToWorld2D(mousePos, game.camera);
 
         const replacedBlock = game.getBlockAtPixelCoord(worldPos.x, worldPos.y);
 
@@ -72,8 +69,8 @@ fn handleMouseInput() void {
 }
 
 fn placePlayerBody(pos: rl.Vector2) void {
-    const x: i32 = @divTrunc(@as(i32, @intFromFloat(pos.x)), game.boxSize);
-    const y: i32 = @divTrunc(@as(i32, @intFromFloat(pos.y)), game.boxSize);
+    const x: i32 = @intFromFloat(@floor(pos.x / @as(f32, @floatFromInt(game.boxSize))));
+    const y: i32 = @intFromFloat(@floor(pos.y / @as(f32, @floatFromInt(game.boxSize))));
 
     ensureListSize(&player.playerList, player.currentPlayerIndex);
 

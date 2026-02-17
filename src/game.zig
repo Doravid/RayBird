@@ -364,7 +364,7 @@ fn fullScreen() void {
 pub fn getBlockAtPixelCoord(x: f32, y: f32) blockType {
     const new_x = x / @as(f32, @floatFromInt(boxSize));
     const new_y = y / @as(f32, @floatFromInt(boxSize));
-    return levelManager.dynamic_map.get(.{ @intFromFloat(new_x), @intFromFloat(new_y) }) orelse return air;
+    return levelManager.dynamic_map.get(.{ @intFromFloat(@floor(new_x)), @intFromFloat(@floor(new_y)) }) orelse return air;
 }
 pub fn getBlockWorldGrid(x: i32, y: i32) blockType {
     return levelManager.dynamic_map.get(.{ x, y }) orelse return air;
@@ -373,12 +373,12 @@ pub fn setBlockAtPixelCoord(x: f32, y: f32, block: blockType) void {
     const new_x = x / @as(f32, @floatFromInt(boxSize));
     const new_y = y / @as(f32, @floatFromInt(boxSize));
 
-    levelManager.dynamic_map.put(.{ @intFromFloat(new_x), @intFromFloat(new_y) }, block) catch |err| {
+    levelManager.dynamic_map.put(.{ @intFromFloat(@floor(new_x)), @intFromFloat(@floor(new_y)) }, block) catch |err| {
         std.debug.print("setBlockAtPixelCoord {}", .{err});
     };
 }
 pub fn setBlockWorldGrid(x: f32, y: f32, block: blockType) void {
-    levelManager.dynamic_map.put(.{ @intFromFloat(x), @intFromFloat(y) }, block) catch |err| {
+    levelManager.dynamic_map.put(.{ @intFromFloat(@floor(x)), @intFromFloat(@floor(y)) }, block) catch |err| {
         std.debug.print("setBlockAtPixelCoord {}", .{err});
     };
 }
