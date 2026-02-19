@@ -195,7 +195,8 @@ pub fn loadMenu() bool {
             return true;
         }
         var i: i32 = 0;
-        while (i < maxLevelUnlocked + 1) {
+        // while (i < maxLevelUnlocked + 1) {
+        while (i < 16) {
             const max_len = 20;
             var buf: [max_len]u8 = undefined;
             const numAsString = std.fmt.bufPrintZ(&buf, "{}", .{i + 1}) catch |err| {

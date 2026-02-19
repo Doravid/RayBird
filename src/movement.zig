@@ -34,6 +34,14 @@ const GroupRef = struct {
     kind: GroupKind,
     index: usize,
 };
+pub fn areCellsSameGroup(x1: i32, y1: i32, x2: i32, y2: i32) bool {
+    const g1 = cellBelongsToGroup(x1, y1).?;
+    const g2 = cellBelongsToGroup(x2, y2).?;
+
+    const cells1 = groupCells(g1);
+    const cells2 = groupCells(g2);
+    return cells1.ptr == cells2.ptr;
+}
 
 fn groupCells(g: GroupRef) []rl.Vector2 {
     return switch (g.kind) {
@@ -65,6 +73,7 @@ fn cellBelongsToGroup(x: i32, y: i32) ?GroupRef {
 
 pub fn canPush(startX: i32, startY: i32, dir: Direction) bool {
     const block = game.getBlockWorldGrid((startX), (startY));
+    std.debug.print("{}\n", .{block});
     if (block == air or block == frt) return true;
     if (block == vic and player.fruitNumber == 0) return true;
     var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
@@ -364,19 +373,18 @@ fn handlePlayerStop(
     var spkVist = false;
     var standing = false;
     for (groupCells(reference)) |*cell| {
-        if (cell.y >= 8) {
-            levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
-        }
-        const curBlock = game.getBlockWorldGrid(@intFromFloat(@floor(cell.x)), @intFromFloat(@floor(cell.y) + 1));
+        const curBlock = game.getBlockWorldGrid(@intFromFloat(cell.x), @intFromFloat(cell.y + 1));
         if (curBlock == spk) {
             spkVist = true;
         }
         if (curBlock == frt or curBlock == sol) {
             standing = true;
         }
+        if (curBlock == bdy and !areCellsSameGroup(@intFromFloat(cell.x), @intFromFloat(cell.y + 1), @intFromFloat(cell.x), @intFromFloat(cell.y))) {
+            standing = !canPush(@intFromFloat(cell.x), @intFromFloat(cell.y + 1), player.direction.down);
+        }
     }
-
     if (spkVist and !standing) {
-        levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
+        player.undo();
     }
 }

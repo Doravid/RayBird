@@ -57,8 +57,8 @@ pub fn updatePos() void {
             currentPlayerIndex = (currentPlayerIndex + 1) % playerList.items.len;
         }
     }
-    var playX: i32 = @intFromFloat(playerList.items[currentPlayerIndex].items[0].x);
-    var playY: i32 = @intFromFloat(playerList.items[currentPlayerIndex].items[0].y);
+    var playX: i32 = @intFromFloat(@floor(playerList.items[currentPlayerIndex].items[0].x));
+    var playY: i32 = @intFromFloat(@floor(playerList.items[currentPlayerIndex].items[0].y));
     if ((rl.isKeyPressed(rl.KeyboardKey.w) or rl.isKeyPressed(rl.KeyboardKey.up))) {
         playY -= 1;
         if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.up) and movement.isStationary()) {
@@ -166,14 +166,17 @@ fn movePlayer(dir: direction) void {
         direction.down => rl.Vector2.add(playerList.items[currentPlayerIndex].items[0], rl.Vector2{ .x = 0, .y = 1 }),
     };
 
-    const newHead = game.getBlockWorldGrid(@intFromFloat(newHeadPos.x), @intFromFloat(newHeadPos.y));
+
+    const newHead = game.getBlockWorldGrid(@intFromFloat(@floor(newHeadPos.x)), @intFromFloat(@floor(newHeadPos.y)));
 
     if (newHead == blockType.vic) {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum() + 1));
+        std.debug.print("You win! (This level)", .{});
         return;
     }
     if (newHead == blockType.spk) {
         levelManager.setLevel(@intCast(levelManager.getCurrentLevelNum()));
+        std.debug.print("Why would you kill your self?", .{});
         return;
     }
     if (newHead == blockType.box or newHead == blockType.bdy) {
@@ -200,6 +203,9 @@ fn movePlayer(dir: direction) void {
         }
         if (curBlock == frt or curBlock == sol) {
             standing = true;
+        }
+        if(curBlock == bdy and !movement.areCellsSameGroup(@intFromFloat(cell.x), @intFromFloat(cell.y + 1), @intFromFloat(cell.x), @intFromFloat(cell.y))){
+            standing = !movement.canPush(@intFromFloat(cell.x), @intFromFloat(cell.y + 1), direction.down);
         }
     }
     if (spkVist and !standing) {
@@ -245,9 +251,12 @@ fn isOwnBodyAt(x: i32, y: i32) bool {
     if (currentPlayerIndex >= playerList.items.len) return false;
 
     for (playerList.items[currentPlayerIndex].items) |segment| {
-        if (@as(i32, @intFromFloat(segment.x)) == x and
-            @as(i32, @intFromFloat(segment.y)) == y)
+        const x_new: f32 = @floor(segment.x);
+        const y_new: f32 = @floor(segment.y);
+        if (@as(i32, @intFromFloat(x_new)) == x and
+            @as(i32, @intFromFloat(y_new)) == y)
         {
+            std.debug.print("TRUE\n", .{});
             return true;
         }
     }
