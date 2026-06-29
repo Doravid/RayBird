@@ -55,6 +55,7 @@ fn handleMouseInput() void {
     if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
         const mousePos = rl.getMousePosition();
         const worldPos = rl.getScreenToWorld2D(mousePos, game.camera);
+        std.debug.print("mouse pos: {any}, world pos: {any}", .{ mousePos, worldPos });
 
         const replacedBlock = game.getBlockAtPixelCoord(worldPos.x, worldPos.y);
 

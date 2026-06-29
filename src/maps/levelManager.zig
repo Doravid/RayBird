@@ -22,7 +22,7 @@ pub const level = struct {
     const Self = @This();
 };
 
-pub var currentLevelNum = 0;
+pub var currentLevelNum: u32 = 0;
 
 pub fn loadLevelFromJson(name: u32) level {
     const alloc = std.heap.c_allocator;
@@ -66,12 +66,10 @@ pub fn loadLevelFromJson(name: u32) level {
 
 var maxLevelUnlocked: usize = 0;
 
-var currentLevelNumber: usize = 0;
-
 pub fn setLevel(levelNumber: u32) void {
     player.clearPlayerAndMap();
     const levelA = loadLevelFromJson(levelNumber);
-    currentLevelNumber = levelNumber;
+    currentLevelNum = levelNumber;
 
     if (levelNumber > maxLevelUnlocked) {
         maxLevelUnlocked = levelNumber - 1;
@@ -114,7 +112,11 @@ pub fn setLevel(levelNumber: u32) void {
 }
 
 pub fn getCurrentLevelNum() usize {
-    return currentLevelNumber;
+    return currentLevelNum;
+}
+
+pub fn resetLevel() void {
+    setLevel(currentLevelNum);
 }
 
 pub fn checkPause() bool {

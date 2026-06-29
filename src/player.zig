@@ -16,7 +16,6 @@ pub const direction = enum { up, down, left, right };
 var movementLocked = false;
 var canFall = false;
 pub var currentPlayerIndex: usize = 0;
-var fallingPlayers = std.ArrayList(bool).init(std.heap.c_allocator);
 pub var fruitNumber: i32 = 0;
 //Player history!
 pub var undoHistory = std.ArrayList(std.ArrayList(std.ArrayList(rl.Vector2))).init(std.heap.c_allocator);
@@ -244,7 +243,6 @@ pub fn clearPlayerAndMap() void {
     boxes.clearBoxes();
     undoHistory.clearAndFree();
     redoHistory.clearAndFree();
-    fallingPlayers.clearAndFree();
     movementLocked = false;
     canFall = false;
     levelManager.dynamic_map.clearAndFree();
@@ -259,7 +257,6 @@ fn isOwnBodyAt(x: i32, y: i32) bool {
         if (@as(i32, @intFromFloat(x_new)) == x and
             @as(i32, @intFromFloat(y_new)) == y)
         {
-            std.debug.print("TRUE\n", .{});
             return true;
         }
     }

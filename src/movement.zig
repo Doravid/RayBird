@@ -274,9 +274,13 @@ fn handleGravity(
         falling.* = true;
     }
 
-    for (groups.?.items) |gr| {
-        for (groupCells(gr)) |*c| {
-            c.*.y += speed * dt;
+    for (groups.?.items) |group| {
+        for (groupCells(group)) |*cell| {
+            cell.*.y += speed * dt;
+            const SCREEN_HIGHT_IN_BOXES: comptime_int = 9;
+            if (cell.*.y > SCREEN_HIGHT_IN_BOXES) {
+                levelManager.resetLevel();
+            }
         }
     }
 }
@@ -385,6 +389,6 @@ fn handlePlayerStop(
         }
     }
     if (spkVist and !standing) {
-        player.undo();
+        levelManager.resetLevel();
     }
 }
