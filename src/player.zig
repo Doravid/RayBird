@@ -84,7 +84,7 @@ pub fn updatePos() void {
         }
     }
 }
-fn undo() void {
+pub fn undo() void {
     if (undoHistory.items.len <= 0) return;
     boxes.undo();
     const oldBody = playerList.clone() catch |err| {
@@ -166,7 +166,6 @@ fn movePlayer(dir: direction) void {
         direction.down => rl.Vector2.add(playerList.items[currentPlayerIndex].items[0], rl.Vector2{ .x = 0, .y = 1 }),
     };
 
-
     const newHead = game.getBlockWorldGrid(@intFromFloat(@floor(newHeadPos.x)), @intFromFloat(@floor(newHeadPos.y)));
 
     if (newHead == blockType.vic) {
@@ -204,7 +203,7 @@ fn movePlayer(dir: direction) void {
         if (curBlock == frt or curBlock == sol) {
             standing = true;
         }
-        if(curBlock == bdy and !movement.areCellsSameGroup(@intFromFloat(cell.x), @intFromFloat(cell.y + 1), @intFromFloat(cell.x), @intFromFloat(cell.y))){
+        if (curBlock == bdy and !movement.areCellsSameGroup(@intFromFloat(cell.x), @intFromFloat(cell.y + 1), @intFromFloat(cell.x), @intFromFloat(cell.y))) {
             standing = !movement.canPush(@intFromFloat(cell.x), @intFromFloat(cell.y + 1), direction.down);
         }
     }
