@@ -14,7 +14,7 @@ pub fn main() anyerror!void {
     if (builtin.target.os.tag != .emscripten) {
         rl.initAudioDevice();
     }
-    rl.setTargetFPS(3000);
+    rl.setTargetFPS(9999);
     rl.setExitKey(rl.KeyboardKey.delete);
     gui.guiSetStyle(gui.GuiControl.default, gui.GuiDefaultProperty.text_size, @divTrunc(rl.getScreenWidth(), 40));
 

@@ -63,24 +63,28 @@ pub fn updatePos() void {
         playY -= 1;
         if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.up) and movement.isStationary()) {
             movePlayer(direction.up);
+            return;
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.s) or rl.isKeyPressed(rl.KeyboardKey.down))) {
         playY += 1;
         if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.down) and movement.isStationary()) {
             movePlayer(direction.down);
+            return;
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.a) or rl.isKeyPressed(rl.KeyboardKey.left))) {
         playX -= 1;
         if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.left) and movement.isStationary()) {
             movePlayer(direction.left);
+            return;
         }
     }
     if ((rl.isKeyPressed(rl.KeyboardKey.d) or rl.isKeyPressed(rl.KeyboardKey.right))) {
         playX += 1;
         if (!isOwnBodyAt(playX, playY) and movement.canPush(playX, playY, direction.right) and movement.isStationary()) {
             movePlayer(direction.right);
+            return;
         }
     }
 }
